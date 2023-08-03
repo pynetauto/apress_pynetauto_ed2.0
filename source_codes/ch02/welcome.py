@@ -1,1 +1,1 @@
-print("Welcome to 'Introduction to Python Network Autoamtion: The First Journey, ed2'")
+print("Welcome to the second edition")
