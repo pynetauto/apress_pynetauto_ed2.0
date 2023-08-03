@@ -1,0 +1,1834 @@
+-------------------------------------------------------------------------------
+Variables and Strings
+-------------------------------------------------------------------------------
+Exercise 2-1: Create variables and assign various data types
+>>> x = 1
+>>> y = 2
+>>> x + y 
+
+>>> type(x + y)
+
+>>> x = '1'
+>>> y = '2'
+>>> x + y 
+
+>>> type(x + y)
+
+>>> x, y, z = 1, 2.0, "3.18"
+>>> print(type(x), type(y), type(z))
+
+>>> fruit = 'apple'
+>>> applause = 'bravo'
+>>> dec1 = 1.0
+>>> bool_one = True
+>>> bool_0 = False
+>>> _nada = None
+-------------------------------------------------------------------------------
+Exercise 2-2: Create variables and use the print() function to print output
+>>> x = 1
+>>> y = 2
+>>> z = 3
+>>> total = x + y + z
+>>> print(total)
+
+>>> total
+-------------------------------------------------------------------------------
+Exercise 2-3: Abbreviated variable assignment
+>>> x, y, z = 1, 2, 3
+>>> print(x, y, z)
+
+>>> x, y, z
+
+>>> a = "apple"
+>>> b,c = 'banana', 'coconut'
+>>> b,c
+
+>>> print(b,c)
+
+>>> print(b,c, sep=',')
+-------------------------------------------------------------------------------
+Exercise 2-4: Entering a string, escape character backslash (\) and type() function
+Exercise
+>>> 'He said, "You are one of a kind."'
+
+>>> said = "He said, \" You are one of a kind.\""
+>>> print(said)
+
+>>> type(said)
+-------------------------------------------------------------------------------
+Exercise 2-5: Is variable a container, a tag, or a pointer?
+>>> x = "apple"
+>>> y = "apple"
+>>> id(x)
+
+>>> id(y)
+
+>>> x == y
+-------------------------------------------------------------------------------
+Exercise 2-6: The power of a variable
+
+Exercise
+>>> print("Python is awesome!")
+
+>>> word = "awesome"
+>>> print("Python is " + word + "!")
+
+>>> word = "awesome"
+>>> print("Python is {}!".format(word))
+
+>>> word = "awesome"
+>>> print(f"Python is {word}!")
+-------------------------------------------------------------------------------
+Exercise 2-7: String indexing
+>>> bread = 'bagel'
+>>> bread [0]
+'b'
+>>> bread [1]
+'a'
+>>> bread [4]
+'l'
+-------------------------------------------------------------------------------
+Exercise 2-8: Variable assignment related errors:
+>>> +lucky7 = 7
+SyntaxError: can't assign to operator
+
+>>> 7lucky= 7
+SyntaxError: invalid syntax
+
+>>> 7_lucky = 7
+SyntaxError: invalid decimal literal
+
+>>> lucky7 = 7
+>>> lucky7
+7
+-------------------------------------------------------------------------------
+Exercise 2-9: SyntaxError: unterminated string literal
+Exercise
+>>> q1 = Did you have a wonderful day?
+
+>>> q1 = "Did you have a wonderful day?
+
+>>> q1 = "Did you have a wonderful day?'
+
+>>> q1 = Did you have a wonderful day?'
+
+>>> q1 = 'Did you have a wonderful day?'
+>>> q1
+-------------------------------------------------------------------------------
+Exercise 2-10: NameError: name 'variable_name' is not defined
+>>> print(a1)
+
+>>> a1 = 'Yes, I had a lovely day.'
+>>> print(a1)
+-------------------------------------------------------------------------------
+Exercise 2-11: SyntaxError: invalid syntax and Python reserved keyword
+>>> for = 'I enjoy driving'
+
+>>> fav_hobby = 'I enjoy driving'
+>>> import keyword
+>>> print(keyword.kwlist)
+-------------------------------------------------------------------------------
+Exercise 2-12: TypeError: 'str' object is not callable
+>>> help = 'Please help me reach my goal.'
+>>> print(help)
+
+>>> help (print)
+
+>>> dir(__builtins__)
+-------------------------------------------------------------------------------
+Exercise 2-13: Handling a long strings
+>>> """You're one of a kind. You're my best friend.
+... I've never met someone like you before.
+... It's been wonderful getting to know you."""
+
+>>> macaroni_cheese = “Boil water, cook macaroni for 7-8 mins, drain, add milk, cheese sauce mix, and butter (optional), mix well, and serve for a delicious Macaroni and Cheese! Enjoy!”
+>>> macaroni_cheese
+
+>>> macaroni_cheese = "Boil water, cook macaroni for 7-8 mins, drain, add milk, \
+... cheese sauce mix, and butter (optional), mix well, and \
+... serve for a delicious Macaroni and Cheese! Enjoy!"
+>>> macaroni_cheese
+-------------------------------------------------------------------------------
+Exercise 2-14: Use \ (backslash) as an escape clause to remove special character meanings
+>>> single_quote_string = 'He said, "arn\'t, can\'t shouldn\'t woundn\'t."'
+>>> print(single_quote_string)
+
+>>> double_quote_string = "He said, \"arn't can't shouldn't wouldn't.\""
+>>> print(double_quote_string)
+-------------------------------------------------------------------------------
+Exercise 2-15: Enter (inject) values/strings into a string using %s
+>>> exam_result = 95
+>>> text_message = 'Congratulations! You have scored %s in your exam!'
+>>> print(text_message% exam_result)
+
+>>> wish = 'You need %s to make your wish come true.'
+>>> genie = 'a Genie in the bottle'
+>>> print(wish% genie)
+
+>>> fast_car = 'Faster electric cars have %s & %s to make it go faster.'
+>>> part1 = 'dual motors'
+>>> part2 = 'bigger batteries'
+>>> print(fast_car%(part1, part2))
+
+>>> my_score = 'My exam scores are %s for English, %s for Math and %s for Science.'
+>>> my_score% (95, 92, 90)
+
+>>> print(my_score% (95, 92, 90))
+-------------------------------------------------------------------------------
+Printing, concatenating, and converting strings
+-------------------------------------------------------------------------------
+Exercise 2-16: print(), len() functions and create a simple function
+Exercise
+>>> print('Paris baguette')
+
+>>> bread = 'NY bagel'
+>>> print(bread)
+
+>>> aussie = 'meat pie'
+>>> print(len(aussie))
+
+>>> print(type(aussie[4]))
+
+>>> bread = 'naan'
+>>> def bread_len():
+
+>>> bread_len()
+-------------------------------------------------------------------------------
+Exercise 2-17: lower() and upper() string methods
+>>> "Bagel Is My Favorite Bread!".lower()
+
+>>> bread = 'BAGEL'
+>>> print(bread.lower())
+
+>>> "baguette is also my favorite bread.".upper()
+
+>>> bread = 'baguette'
+>>> print(bread.upper())
+-------------------------------------------------------------------------------
+Exercise 2-18: String Concatenation and str() method
+>>> print('Best' + 'friends' + 'last' + 'forever.')
+
+>>> print('Best ' + 'friends ' + 'last ' + 'forever.')
+
+>>> print('Best' + ' ' + 'friends' + ' ' + 'last' + ' ' + 'forever.')
+
+>>> print('Best', 'friends', 'last', 'forever.')
+
+>>> print('~'*79)
+>>> love = ('like' * 10)
+>>> print(love)
+
+>>> time = 30
+>>> print('You have' + time + 'minutes left.')
+
+>>> print('You have ' + str (time) + ' minutes left.')
+-------------------------------------------------------------------------------
+Exercise 2-19: Learn to change string using curly brackets and .format()
+>>> 'She is {} years old.'.format(25)
+
+>>> 'She is {{}} years old.'.format(25)
+
+>>> 'She is {{{}}} years old.'.format(25)
+
+>>> 'Learning Python 101 is {}.'.format('important')
+
+>>> '{} {} {} {} {}'.format ('Learning', 'Python', 101, 'is', 'important.')
+
+>>> '{} | {} | {}'.format ('bread', 'quantity', 'date')
+
+>>> '{} | {} | {}'.format ('bagel', '100', '01/12/2020')
+-------------------------------------------------------------------------------
+Exercise 2-20: Adjust text position with curly brackets and .format()
+>>> '{}|{}'.format ('bagel', '10')
+
+>>> '{} | {}'.format ('bagel', '10')
+
+>>> '{0:1} | {1:1}'.format ('bagel', '10')
+
+>>> '{0:1} | {0:1}'.format ('bagel', '10')
+
+>>> ('{0:1} | {0:1} | {1:1} | {1:1}'.format ('bagel', '10'))
+
+>>> '{0:>1} | {1:1}'.format('bagel', '10')
+
+>>> '{0:>10} | {1:1}'.format('bagel', '10')
+
+>>> '{0:>20} | {1:1}'.format('bagel', '10')
+
+>>> '{0:^10} | {1:^10}'.format ('bagel', '10') 
+
+>>> '{0:^20} | {1:^20}'.format ('bagel', '10')
+
+>>> '{0:^30} | {1:^30}'.format ('bagel', '10')
+-------------------------------------------------------------------------------
+Exercise 2-21: Adjusting the number of decimal places
+>>> '{0:^10} | {1:10}'.format('pizza', 27.333333)
+
+>>> '{0:^10} | {1:10.2f}'.format('pizza', 27.333333)
+
+>>> '{0:^10} | {1:10}'.format('Cisco IOS XE 4351', 16.1203)
+
+>>> '{0:1} | {1:10.2f}'.format('Cisco IOS XE 4351', 16.1203)
+
+>>> '{0:1} | {1:1.2f}'.format('Cisco IOS XE 4351', 16.1203)
+
+>>> router = ('Cisco IOS XE 4351', 16.1203)
+>>> router[0] + ' | ' + str( round(router[1], 2))
+-------------------------------------------------------------------------------
+Exercise 2-22: Ask and receive user input with input()
+>>> fav_bread = input('Name of your favorite bread: ')
+
+>>> print(fav_bread)
+
+>>> num_bread = input("How many " + fav_bread + " would you like? ")
+
+>>> print(num_bread)
+
+>>> 'So, you wanted {} {} bread.'.format(num_bread, fav_bread)
+-------------------------------------------------------------------------------
+Exercise 2-23: Changing a word or character(s) in a string
+>>> your_phone = 'iPhone 14 Pro'
+>>> your_phone.split()
+>>> your_phone = your_phone.split()
+>>> your_phone
+
+>>> your_phone[2] = 'ProMax'
+>>> your_phone
+
+>>> " ".join(your_phone) # " " has a white space
+
+>>> my_phone = 'Galaxy S20 +'
+>>> len(my_phone)
+
+>>> my_phone = list(my_phone)
+>>> my_phone
+
+>>> my_phone[9], my_phone[11] = '3', 'Ultra'
+>>> my_phone
+
+>>> "".join(my_phone) # "" has no white space
+-------------------------------------------------------------------------------
+Numbers and Arithmetic Operators
+-------------------------------------------------------------------------------
+Exercise 2-24: Arithmetic Operators
+>>> 5 + 2
+
+>>> 5 - 2
+
+>>> 5 * 2
+
+>>> 5 / 2
+
+>>> 5 // 2
+
+>>> 5 % 2
+
+>>> 5 ** 2
+
+>>> 5 + 2.0
+
+>>> 5 - 2.0
+
+>>> 5 * 2.0
+
+>>> 5 / 2.0
+
+>>> 5 / 2
+
+>>> type(5 & 2)
+
+>>> type(2.5)
+
+>>> 5 / 0
+-------------------------------------------------------------------------------
+Exercise 2-25: Integer vs. String
+>>> int_2 = 2
+>>> str_5 = "5"
+>>> str_5 + int_2
+
+>>> str_5 + str(int_2)
+
+>>> int(str_5) + int_2
+-------------------------------------------------------------------------------
+Booleans and Relational Operators
+-------------------------------------------------------------------------------
+Exercise 2-26: Booleans
+>>> a = True
+>>> b = False
+>>> print(a)
+
+>>> print(b)
+
+>>> type (a)
+
+>>> type (b)
+
+>>> type (True)
+
+>>> print((1).__bool__())
+
+>>> type (False)
+
+>>> print((0).__bool__())
+-------------------------------------------------------------------------------
+Exercise 2-27: Relational Operators
+>>> 1 == 2
+
+>>> 1 > 2
+
+>>> 1 >= 2
+
+>>> 1 < 2
+
+>>> 1 <= 2
+
+>>> 1 != 2
+-------------------------------------------------------------------------------
+Exercise 2-28: Boolean expressions, test True or False
+>>> True and True is True
+
+>>> True and False is False
+
+>>> False and True is False
+
+>>> False and False is False
+
+>>> not True is False
+
+>>> not False is True
+
+-------------------------------------------------------------------------------
+Exercise 2-29: Logical (membership) operators
+Exercise
+>>> True and False or not False
+
+>>> True and False or True
+
+>>> False or True
+
+>>> True or False
+-------------------------------------------------------------------------------
+Exercise 2-30: Changing the order of operation with () (parentheses)
+>>> True and False or not False
+
+>>> (True and False) or (not False)
+
+>>> ((True and False) or (not False))
+-------------------------------------------------------------------------------
+Control statements - if, elif, and else
+-------------------------------------------------------------------------------
+Exercise 2-31: if and else
+>>> if 1 < 2:
+...     print('One is less than two.')
+...
+
+>>> if 1 > 2:
+...     print('One is bigger than two.')
+...
+>>>
+
+>>> if 1 > 2:
+...     print('One is bigger than two.')
+... else:
+...     print('One is NOT bigger than two.')
+...
+
+-------------------------------------------------------------------------------
+Exercise 2-32: if, elif and else
+>>> age = 21
+>>> if age >= 18:
+...     print('You are old enough to get your driver\'s license.')
+… 
+
+>>> age = 17
+>>> if age >= 18:
+...     print('You are old enough to drive a car.')
+else:
+...     print('You are too young to drive a car.')
+… 
+
+>>> age = 100
+>>> if age <18:
+...     print('You are too young to drive a car.') elif age> 99:
+...     print('You are too old to drive a car.')
+else:
+...     print('You are in an eligible age group, so you can drive a car.')
+… 
+-------------------------------------------------------------------------------
+Exercise 2-33: Write a code with if, elif, and else
+# driver_age.py
+q1 = input ('What is your legal age? ')
+age = int(q1)
+
+if age < 16:
+    print('You are too young to take a driving test.') 
+elif age > 99:
+    print('You are too old to take a driving test.') 
+else:
+    print('You\'re in the right age group to take a driving test.')
+
+C:\Python312\ch02>python driver_age.py.py
+What is your legal age? 15
+
+C:\Python312\ch02>python driver_age.py.py
+What is your legal age? 100
+
+C:\Python312\ch02>python driver_age.py.py
+What is your legal age? 17
+
+-------------------------------------------------------------------------------
+Functions
+-------------------------------------------------------------------------------
+Exercise 2-34: Defining a function
+>>> def say_hello():
+...	print(‘Hello’)
+...
+>>> say_hello()
+
+>>> say_goodbye()
+-------------------------------------------------------------------------------
+Exercise 2-35: Assigning default values to a function
+>>> def say_hello(name):
+...         print(f'Hello {name}')
+...
+>>> say_hello('Hugh')
+
+>>> say_hello()
+
+>>> def say_hello(name = 'son'):
+...         print(f'Hello {name}')
+... 
+
+>>> say_hello()
+
+>>> say_hello('John')
+-------------------------------------------------------------------------------
+Exercise 2-36: Defining Hello and Goodbye functions
+>>> def say_hello(f_name, s_name):
+...     print('Hello! {} {}'. format (f_name, s_name))
+... 
+>>> say_hello ('Mike', 'Smith')
+
+>>> say_hello ('Mike')
+
+>>> say_hello(f_name='Leah', s_name='Taylor')
+
+>>> say_hello(s_name = 'Rose', f_name = 'Kate')
+
+>>> def say_goodbye(f_name, s_name = 'Doe'):
+...     print('Goodbye! {} {}'. format (f_name, s_name))
+...
+>>> say_goodbye('John')
+
+>>> say_goodbye('John', 'Citizen')
+-------------------------------------------------------------------------------
+Exercise 2-37: odd or even function
+Exercise
+>>> def odd_or_even(number):
+...     if number%2 == 0:
+...         return 'even'
+...     else:
+...         return 'odd'
+... 
+>>> odd_or_even(3)
+
+>>> odd_or_even(4)
+
+>>> def even_num(number):
+...     if number%2 == 0:
+...         return True
+...     else:
+...         return False
+... 
+>>> even_num(1)
+
+>>> even_num(2)
+-------------------------------------------------------------------------------
+Exercise 2-38: Nesting a function within a function and a lambda function
+>>> def name():
+...     n = input('Enter your name: ')
+...         return n
+... 
+>>> def say_name(n):
+...     print('Your name is {}.'.format(n))
+... 
+>>> def say_the_name():
+...     n = name()
+...         say_name(n) # The first function is nested here.
+...
+>>> say_the_name()
+
+>>> say_the_name = lambda: (lambda n: print('Your name is {}.'.format(n)))(input('Enter your name: '))
+>>> say_the_name()
+Enter your name: Jane Doe
+-------------------------------------------------------------------------------
+Lists
+-------------------------------------------------------------------------------
+Exercise 2-39: Create a list and index items
+>>> vehicles = ['car', 'bus', 'truck']
+>>> print(vehicles[0])
+
+>>> print(vehicles[1])
+
+>>> print(vehicles[2])
+
+>>> vehicles = ['car', 'bus', 'truck']
+>>> vehicles[0] = 'motorbike'
+>>> vehicles
+
+>>> print(vehicles[-1])
+
+>>> print(vehicles[-2])
+
+>>> print(vehicles[-3])
+
+>>> vehicles
+
+>>> vehicles[0] = ['sedan', 'wagon', 'convertible', 'SUV']
+>>> vehicles
+
+>>> cars = ['sedan', 'wagon', 'SUV', 'hatchback']
+>>> for car in range(len(cars)):
+...     print('{} is at position {}. '.format(cars[car], car))
+... 
+-------------------------------------------------------------------------------
+Exercise 2-40: Using append, extend, and insert in a list
+
+>>> cars = ['sedan', 'SUV', 'hatchback']
+>>> cars.append('convertible')
+>>> cars
+
+>>> cars.extend(['crossover', '4WD'])
+>>> cars
+
+>>> cars.insert(1, 'wagon')
+>>> cars
+-------------------------------------------------------------------------------
+Slicing
+-------------------------------------------------------------------------------
+Exercise 2-41: slicing a list
+>>> bread = ['bagels', 'baguette', 'ciabatta', 'crumpet', 'naan', 'pita', 'tortilla']
+>>> some_bread = bread[1:3]
+>>> some_bread
+
+>>> print('Some Bread: {}'.format (some_bread))
+
+>>> first_two = bread[0:2]
+>>> first_two
+
+>>> first_three_bread = bread[:3]
+>>> print(first_three_bread)
+
+>>> last_two_bread = bread[-2:]
+>>> print('Last two bread: {}'.format (last_two_bread))
+
+>>> bread = ['bagels', 'baguette', 'ciabatta']
+>>> ciabatta_index = bread.index('ciabatta')
+>>> print(ciabatta_index)
+
+-------------------------------------------------------------------------------
+Exceptions and Error Handling 
+-------------------------------------------------------------------------------
+>>> bread = ['bagels', 'baguette', 'ciabatta']
+>>> crumpet_index = bread.index('crumpet')
+-------------------------------------------------------------------------------
+Exercise 2-42: Handling errors with try and except in a list
+>>> bread = ['bagels', 'baguette', 'ciabatta']
+>>> try:
+...     crumpet_index = bread.index('crumpet')
+... except:
+...     crumpet_index = 'No crumpet bread found.'
+...     print(crumpet_index)
+...
+
+# ex2_42.py
+bread = ['bagels', 'baguette', 'ciabatta']
+try:
+    crumpet_index = bread.index('crumpet')
+except:
+    crumpet_index = 'No crumpet bread found.'
+print(crumpet_index)
+
+C:\Python312\ch02>python ex2_42.py
+-------------------------------------------------------------------------------
+Exercise 2-43: Find an index of an item in a list with the customized exception
+# ex2_43_1.py
+bread = ['bagels', 'baguette', 'ciabatta', 'crumpet'] 
+
+try:
+    crumpet_index = bread.index ('crumpet') 
+except:
+   crumpet_index = 'No crumpet bread was found.' 
+   print(crumpet_index)
+
+
+# ex2_43_2.py
+bread = ['bagels', 'baguette', 'ciabatta', 'naan'] 
+
+try:
+    crumpet_index = bread.index ('crumpet') 
+except:
+   crumpet_index = 'No crumpet bread was found.' 
+   print(crumpet_index)
+-------------------------------------------------------------------------------
+Practicing Lists
+-------------------------------------------------------------------------------
+Exercise 2-44: Practice a list
+>>> shopping_list1 = 'baseball hat, baseball shoes, sunglasses, baseball bat, sunscreen lotion, baseball meat'
+>>> print(shopping_list1)
+
+>>> type(shopping_list1)
+
+>>> print(shopping_list2 [2])
+
+>>> type(shopping_list2)
+
+>>> shopping_list2 = ['baseball hat', 'baseball shoes', 'sunglasses', 'baseball bat', 'sunscreen lotion', 'baseball meat']
+>>> shopping_list2.pop(5)
+
+>>> shopping_list2
+
+>>> print(shopping_list2 [2])
+
+>>> print(shopping_list2 [2: 5])
+
+>>> shopping_list2 [2] = 'ball'
+>>> print(shopping_list2)
+
+>>> some_numbers = [1, 3, 5]
+>>> some_strings = ['which', 'Olympic', 'sports']
+>>> numbers_and_strings = ['which', 1, 'Olympic', 3, 'sports', 5]
+
+>>> numbers = [3, 6, 9, 12]
+>>> strings = ['soccer', 'baseball', 'basketball', 'swimming']
+>>> new_list = [numbers, strings]
+>>> print(new_list)
+
+>>> summer_sports = ['swimming', 'diving', 'baseball', 'basketball', 'cricket']
+>>> summer_sports.append ('beach volleyball')
+>>> print(summer_sports)
+
+>>> print(summer_sports)
+
+>>> del summer_sports [1]
+>>> print(summer_sports)
+
+>>> summer_sports = ['swimming', 'baseball', 'basketball', 'cricket']
+>>> winter_sports = ['skiing', 'ice skating', 'ice hockey', 'snowboarding']
+>>> print(summer_sports + winter_sports)
+
+>>> summer_sports = ['swimming', 'baseball', 'basketball', 'cricket']
+>>> winter_sports = ['skiing', 'ice skating', 'ice hockey', 'snowboarding']
+>>> sports_list = list(zip(summer_sports, winter_sports))
+>>> print(sports_list)
+-------------------------------------------------------------------------------
+for loop and while loop (Loops)
+-------------------------------------------------------------------------------
+Exercise 2-45: for loop upper() and capitalize() methods
+>>> bread_type = ['bagels', 'baguette', 'ciabatta']
+>>> for bread in bread_type:
+...     print(bread.upper())
+... 
+
+>>> bread_type = ['bagels', 'baguette', 'ciabatta']
+>>> for bread in bread_type:
+...     print(bread.capitalize())
+...
+-------------------------------------------------------------------------------
+Exercise 2-46: while loop and len() function
+>>> basket = ['bagels', 'baguette', 'ciabatta', 'crumpet', 'naan', 'pita', 'tortilla']
+>>> bread = 0
+>>> while bread < len(basket):
+...     print(basket[bread], end=" ") # " " contains a white space
+...     bread += 1
+...
+-------------------------------------------------------------------------------
+Sorting and Ranges
+-------------------------------------------------------------------------------
+Exercise 2-47: Use sort() vs sorted() to a list
+>>> bread = ['naan', 'baguette', 'tortilla', 'ciabatta', 'pita']
+>>> bread.sort()
+>>> bread
+
+>>> bread = ['naan', 'baguette', 'tortilla', 'ciabatta', 'pita']
+>>> bread_in_order = sorted(bread)
+>>> bread_in_order
+
+>>> bread
+-------------------------------------------------------------------------------
+Exercise 2-48: Linking two lists
+>>> bread = ['naan', 'baguette', 'tortilla', 'ciabatta', 'pita']
+>>> more_bread = ['bagels', 'crumpet']
+>>> all_bread = bread + more_bread
+>>> print(all_bread)
+
+>>> all_bread.sort()
+>>> print(all_bread)
+
+>> all_bread.reverse()
+>>> all_bread
+-------------------------------------------------------------------------------
+Exercise 2-49: Find list length using len() function
+>>> bread = ['bagels', 'baguette', 'ciabatta']
+>>> print(len(bread))
+
+>>> bread.append('naan')
+>>> print(len(bread))
+-------------------------------------------------------------------------------
+Exercise 2-50: range() and for loop()
+>>> for number in range (3):
+...	print(number)
+... 
+
+>>> for number in range (2, 5):
+...	print(number, end=" ")
+... 
+
+>>> for number in range (1, 8, 2):
+...     print(number, end=" ")
+... 
+
+>>> for bread in ['bagels', 'baguette', 'crumpet', 'naan']:
+...     print(bread, end=" ")
+... 
+
+>>> for bread in ('bagels', 'baguette', 'crumpet', 'naan'):
+...     print(bread, end=" ")
+... 
+-------------------------------------------------------------------------------
+Exercise 2-51: string list for loop() and range() with arguments
+>>> bread = ['bagels', 'baguette', 'ciabatta', 'crumpet', 'naan', 'pita', 'tortilla']
+>>> for number in range (0, len (bread), 2):
+...     print(bread [number] , end=" ")
+... 
+
+>>> bread = ['bagels', 'baguette', 'ciabatta', 'crumpet', 'naan', 'pita', 'tortilla']
+>>> for number in range (0, len (bread), 3):
+...     print(bread [number] , end=" ")
+... 
+
+>>> bread = ['bagels', 'baguette', 'ciabatta', 'crumpet', 'naan', 'pita', 'tortilla']
+>>> for number in range (0, len (bread), 5):
+...      print(bread [number] , end=" ")
+... 
+-------------------------------------------------------------------------------
+Tuples
+-------------------------------------------------------------------------------
+Exercise 2-52: Tuple basic examples
+>>> tuple1 = (0, 1, 3, 6, 9)
+>>> tuple2 = ('w', 'x', 'y', 'z')
+>>> tuple3 = (0, 1, 'x', 2, 'y', 3, 'z')
+
+>>> tuple1 = (0, 1, 3, 6, 9)
+>>> tuple [1] = 12
+
+>>> tuple1 = (0, 1, 3, 6, 9)
+>>> tuple2 = ('w', 'x', 'y', 'z')
+>>> print(tuple1 + tuple2)
+-------------------------------------------------------------------------------
+Exercise 2-53: tuple to list conversion
+>>> tuple3 = (0, 1, 'x', 2, 'y', 3, 'z')
+>>> list (tuple3)
+
+>>> tuple1 = (0, 1, 3, 6, 9)
+>>> tuple2 = ('w', 'x', 'y', 'z')
+>>> list (tuple1 + tuple2)
+-------------------------------------------------------------------------------
+Exercise 2-54: Handling tuples,is tuple immutable?
+>>> days_of_the_week = ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')>>> for day in days_of_the_week:
+...     print(day, end=" ")
+...
+
+>>> days_of_the_week = ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
+>>> days_of_the_week [0] = 'Funday'
+
+>>> days_of_the_week = ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
+>>> print(days_of_the_week)
+
+>>> del days_of_the_week
+>>> print(days_of_the_week)
+-------------------------------------------------------------------------------
+Exercise 2-55: tuple to list and list to tuple conversions
+>>> weekend_tuple = ('Saturday', 'Sunday')
+>>> weekend_list = list (weekend_tuple)
+>>> print('weekend_tuple is {}.'. format (type (weekend_tuple)))
+
+>>> print('weekend_list is {}.'. format (type (weekend_list)))
+
+>>> country_list = ['US', 'England', 'Germany', 'France']
+>>> country_tuple = tuple (country_list)
+>>> type (country_list)
+
+>>> type (country_tuple)
+-------------------------------------------------------------------------------
+Exercise 2-56: Using a for loop in a tuple
+>>> countries = ('US', 'England', 'Germany', 'France')
+>>> for country in countries:
+...     print(country, end=" ")
+... 
+-------------------------------------------------------------------------------
+Exercise 2-57: Assigning multiple variables to a tuple
+>>> weekend = ('Saturday', 'Sunday')
+>>> (saturn, sun) = weekend
+>>> print(saturn)
+
+>>> weekdays = ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
+>>> (moon, tiu, woden, thor, freya) = weekdays
+>>> print(thor)
+
+>>> country_info = ['England', '+44']
+>>> (country, code) = country_info
+>>> print(country)
+
+>>> print(code)
+-------------------------------------------------------------------------------
+Exercise 2-58: Creating a simple tuple function
+>>> def high_and_low (numbers):
+...     highest = max (numbers)
+...     lowest = min (numbers)
+...     return (highest, lowest)
+...
+>>> lotto_numbers = [1, 37, 25, 48, 15, 23]
+>>> (highest, lowest) = high_and_low (lotto_numbers)
+>>> print(highest)
+
+>>> print(lowest)
+-------------------------------------------------------------------------------
+Exercise 2-59: Using tuples as list elements
+Exercise
+>>> country_code = [('England', '+44'), ('France', '+33')]
+>>> for (country, code) in country_code:
+...     print(country, code)
+...
+
+>>> for (country, code) in country_code:
+...     print(country, end=" ")
+...
+
+>>> for (country, code) in country_code:
+...     print(code, end=" ")
+...
+-------------------------------------------------------------------------------
+Dictionary
+-------------------------------------------------------------------------------
+Exercise 2-60: dictionary basics
+>>> fav_activity = {'hugh': 'computer games', 'leah': 'ballet', 'caitlin': 'ice skating'}
+>>> print(fav_activity)
+
+>>> fav_activity = {'hugh': 'computer games', 'leah': 'ballet', 'caitlin': 'ice skating'}
+>>> print(fav_activity ['caitlin'])
+
+>>> fav_activity = {'hugh': 'computer games', 'leah': 'ballet', 'caitlin': 'ice skating'}
+>>> del fav_activity ['hugh']
+>>> print(fav_activity)
+
+>>> print(fav_activity)
+
+>>> fav_activity ['leah'] = 'swimming'
+>>> print(fav_activity)
+-------------------------------------------------------------------------------
+Exercise 2-61: Dictionary TypeError and converting two lists as a single dictionary
+>>> fav_activity = {'leah': 'swimming', 'caitlin': 'ice skating'}
+>>> fav_subject = {'leah': 'math', 'caitlin': 'english'}
+>>> print(fav_activity + fav_subject)
+
+>>> keys = ['a', 'b', 'c', 'm', 'p']
+>>> values = ['apple', 'banana', 'coconut', 'melon', 'pear']
+>>> fruits = dict (zip (keys, values))
+>>> fruits
+-------------------------------------------------------------------------------
+Exercise 2-62: Use keys to print values from a dictionary
+>>> dialing_code = {'France': '+ 33', 'Italy': '+ 39', 'Spain': '+ 34', 'England': '+ 44'}
+>>> France_code = dialing_code ['France']
+>>> Italy_code = dialing_code ['Italy']
+>>> Spain_code = dialing_code ['Spain']
+>>> England_code = dialing_code ['England']
+>>> print('Press {} first to call France.'. format (France_code))
+
+>>> print('Press {} first to call Italy.'. format (Italy_code))
+
+>>> print('Press {} first to call Spain.'. format (Spain_code))
+
+>>> print('Press {} first to call England.'. format (England_code))
+-------------------------------------------------------------------------------
+Exercise 2-63: Changing a dictionary value
+>>> dialing_code = {'France': '+ 33', 'Italy': '+ 39', 'Spain': '+ 34', 'England': '+ 44'}
+>>> dialing_code ['England'] = '+ 44-20'
+>>> England_London = dialing_code ['England']
+>>> print('Dial {} to call London, England.'. format (England_London))
+-------------------------------------------------------------------------------
+Exercise 2-64: Adding a new set of keys and values to a dictionary
+>>> dialing_code = {'France': '+ 33', 'Italy': '+ 39', 'Spain': '+ 34', 'England': '+ 44'}
+>>> dialing_code ['Greece'] = '+30'
+>>> dialing_code
+-------------------------------------------------------------------------------
+Exercise 2-65: Find the number of dictionary elements
+>>> dialing_code = {'England': '+44', 'Greece': '+30', 'Italy': '+39', 'Spain': '+34', 'France': '+ 33 '}
+>>> print(len (dialing_code))
+-------------------------------------------------------------------------------
+Exercise 2-66: Deleting dictionary keys and values
+>>> dialing_code = {'England': '+44', 'Greece': '+30', 'Italy': '+39', 'Spain': '+34', 'France': '+ 33 '}
+>>> del dialing_code ['Italy']
+>>> print(dialing_code)
+-------------------------------------------------------------------------------
+Exercise 2-67: Writing a python script with a dictionary
+# ex2_67.py
+dialing_code = {'England': '+44', 'Greece': '+30', 'Italy': '+39', 'Spain': '+34', 'France': '+33'}
+for code in dialing_code:
+    print('The country code for {0} is {1}.'. format (code, dialing_code [code]))
+-------------------------------------------------------------------------------
+Exercise 2-68: Dictionary for loop and formatting
+>> countries = {'England': {'code':'+ 44', 'capital_city':'London'}, 'France': {'code':'+ 33', 'capital_city':'Paris'}}
+>>> for country in countries:
+...     print(f"{country}'s country info:")
+...     print(countries [country] ['code'])
+...     print(countries [country] ['capital_city'])
+...
+-------------------------------------------------------------------------------
+Handling Files
+-------------------------------------------------------------------------------
+Exercise 2-69: Read and display hosts file from your PC
+>>> hosts = open('c://windows//system32//drivers//etc//hosts')
+>>> hosts_file = hosts.read()
+>>> print(hosts_file)
+
+Optionally, run this from Linux or macOS Python interactive shell.
+>>> hosts = open ('/etc/hosts')
+>>> hosts_file = hosts.read()
+>>> print(hosts_file)
+
+-------------------------------------------------------------------------------
+Exercise 2-70: Open and close hosts files
+>>> hosts = open('c://windows//system32//drivers//etc//hosts')
+>>> hosts_file = hosts.read()
+>>> print(hosts_file)
+
+>>> hosts.close ()
+-------------------------------------------------------------------------------
+Exercise 2-71: Creating code to close a file in two ways
+>>> hosts = open ('c://windows//system32//drivers//etc//hosts', 'r')
+>>> hosts_file_contents = hosts.read()
+>>> print('File closed? {}'.format(hosts.closed))
+
+>>> if not hosts.closed:
+...     hosts.close()
+...
+>>>
+>>> print('File closed? {}'.format(hosts.closed))
+
+
+>>> with open ('c://windows//system32//drivers//etc//hosts', 'r') as hosts:
+...	print('File closed? {}'.format (hosts.closed))
+...	print(hosts.read())
+...	print('Finished reading the file.')
+...
+
+>>> print('File closed? {}'. format (hosts.closed))
+
+
+try:
+    f = open('c://windows//system32//drivers//etc//hosts', encoding = 'utf-8')
+    f_read = f.read()
+    print(f_read)
+finally:
+    f.close()
+-------------------------------------------------------------------------------
+Exercise 2-72: Create a text file, read, write and print
+Exercise
+>>> f = open('C://Python312//ch02//file1.txt', 'w+')
+>>> for i in range(3):
+...	f.write('This is line %d.\r' %(i + 1))
+... 
+
+>>> f.close() # Always close file. Data gets written as file closes.
+>>>
+>>> f = open('C://Python312//ch02//file1.txt')
+>>> f_read = f.read()
+>>> print(f_read)
+
+>>> print(f_read.strip())# Removes undesired whitespaces.
+
+>>> print(f_read, end='') # Removes undesired whitespaces.
+
+>>> f.close()# Always close file.
+
+>>> with open('C://Python312//ch02//file1.txt', 'w+') as f:
+...     for i in range(3):
+...     f.write('This is line %d.\n' %(i + 1))
+... 
+
+>>> with open('C://Python312//ch02//file1.txt', 'r') as f:
+...     for line in f:
+...     print(line)
+... 
+
+>>> with open('C://Python312//ch02//file1.txt', 'r') as f:
+...     for line in f:
+...     print(line, end=' ')
+... 
+
+>>> with open('C://Python312//ch02//file1.txt', 'r') as f:
+...     for line in f:
+...     print(line.strip())
+...
+
+>>> with open('C://Python312//ch02//file1.txt', 'r') as f:
+...     skip_header = next(f) #Removes the header or the first line.
+...     for line in f:
+...         print(line.strip())
+...
+
+>>> with open('C://Python312//ch02//file1.txt', 'w+') as f:
+...     for i in range(3):
+...         f.write('This is line %d.\r\n' %(i + 1))
+...
+
+>>> with open('C://Python312//ch02//file1.txt', 'r') as f:
+...     for line in f:
+...         print(line)
+...
+-------------------------------------------------------------------------------
+Exercise 2-73: Use rstrip() or lstrip() to remove white spaces
+>>> with open('C://Python312//ch02//file1.txt', 'w+') as f:
+...     for i in range(3):
+...     f.write('▯▯▯▯This line contains white spaces %d.▯▯▯▯\n' %(i + 1))
+... 
+
+>>> with open('C://Python312//ch02//file1.txt', 'r') as f:
+...     for line in f:
+...     print(line)
+...
+
+>>> with open('C://Python312//ch02//file1.txt', 'r') as f:
+...     for line in f:
+...     print(line.lstrip())
+...
+
+>>> with open('C://Python312//ch02//file1.txt', 'r') as f:
+...     for line in f:
+...         print(line.rstrip())
+...
+
+>>> with open('C://Python312//ch02//file1.txt', 'r') as f:
+...     for line in f:
+...         print(line.strip())
+...
+-------------------------------------------------------------------------------
+Exercise 2-74: Python file mode exercise – r mode
+>>> with open('C://Python312//ch02//file2.txt', 'r') as f:
+...     print('Created file2.txt')
+...
+
+>>> import os
+>>> os.path.isfile('C://Python312//ch02//file2.txt')
+
+>>> with open('C://Python312//ch02//file2.txt', 'w') as f:
+...     print('Created file2.txt')
+...
+
+>>> import glob
+>>> print(glob.glob('C://Python312//ch02//*.txt'))
+
+>>> import os
+>>> os.path.isfile('C://Python312//ch02//file2.txt')
+
+>>> with open('C://Python312//ch02//file2.txt') as f:
+...     print(f.mode)
+...
+
+>>> with open('C://Python312//ch02//file2.txt') as f:
+...     f.write ('Writing to a file is fun.')
+...
+-------------------------------------------------------------------------------
+Exercise 2-75: Python file modes exercise –r+ mode
+>>> import os
+>>> os.remove('C://Python312//ch02//file2.txt')
+>>> os.path.isfile('C://Python312//ch02//file2.txt')
+
+>>> with open('C://Python312//ch02//file2.txt', 'r+') as f:
+...     f.write('* Test Line 1')
+...     print('Trying to write the first line.')
+...
+
+>>> with open('C://Python312//ch02//file2.txt', 'w+') as f:
+...     f.write('* Test Line 1')
+...     print('Just created file2.txt with line 1')
+... 
+
+>>> with open('C://Python312//ch02//file2.txt', 'r+') as f:
+...     print(f.mode)
+...
+
+>>> with open('C://Python312//ch02//file2.txt', 'r+') as f:
+...     f_read = f.read()
+...     print(f_read)
+... 
+
+>>> with open('C://Python312//ch02//file2.txt', 'r+') as f:
+...     f.write('# This will overwrite Line 1')
+...  
+
+>>> with open('C://Python312//ch02//file2.txt', 'r+') as f:
+...     f_read = f.read()
+...     print(f_read)
+... 
+-------------------------------------------------------------------------------
+Exercise 2-76: Python file modes exercise –a mode
+>>> import os
+>>> os.remove('C://Python312//ch02//file2.txt')
+>>> os.path.isfile('C://Python312//ch02//file2.txt')
+
+>>> with open('C://Python312//ch02//file2.txt', 'a') as f:
+...     f.write('This is line 1.')
+... 
+>>> with open('C://Python312//ch02//file2.txt', 'a') as f:
+...     f_read = f.read()
+...     print(f_read)
+... 
+>>> with open('C://Python312//ch02//file2.txt', 'r') as f:
+...     f_read = f.read()
+...     print(f_read)
+... 
+>>> with open('C://Python312//ch02//file2.txt', 'a') as f:
+...     f.write('This is line 2.')
+... 
+>>> with open('C://Python312//ch02//file2.txt', 'r') as f:
+...     f_read = f.read()
+...     print(f_read)
+... 
+>>> with open('C://Python312//ch02//file2.txt', 'a') as f:
+...     f.write('\rThis is line 3.')
+... 
+>>> with open('C://Python312//ch02//file2.txt', 'r') as f:
+...     f_read = f.read()
+...     print(f_read)
+...
+>>> with open('C://Python312//ch02//file2.txt', 'a') as f:
+...     f.write('\nThis is line 4.')
+... 
+>> with open('C://Python312//ch02//file2.txt', 'r') as f:
+...     for line in f.readlines():
+...         print(line.strip())
+...
+>>> with open('C://Python312//ch02//file2.txt', 'r') as f:
+...      f.readline()
+... 
+>>> with open('C://Python312//ch02//file2.txt', 'r') as f:
+...     f.readlines()
+... 
+>>> with open('C://Python312//ch02//file2.txt', 'r') as f:
+...     f.tell()
+... 
+>> with open('C://Python312//ch02//file2.txt', 'a') as f:
+...     f.tell()
+... 
+-------------------------------------------------------------------------------
+Exercise 2-77: Python file modes exercise – a+ mode
+>>> import os
+>>> os.remove('C://Python312//ch02//file2.txt') # Removes old file2.txt
+>>> with open('C://Python312//ch02//file2.txt', 'a+') as f:
+...     print(f.mode)
+...     f.write('This is line 1.\rThis is line 2.\rThis is line 3.\r')
+... 
+>>> with open('C://Python312//ch02//file2.txt', 'a+') as f:
+...     f_read = f.read()
+...     print(f_read, end='')
+...
+>>> with open('C://Python312//ch02//file2.txt', 'r') as f:
+...     f_read = f.read()
+...     print(f_read, end='')
+... 
+-------------------------------------------------------------------------------
+Exercise 2-78: Python file modes exercise – w mode
+>>> with open('C://Python312//ch02//file2.txt', 'w') as f:
+...     f.tell()
+...     print(f.mode)
+...     f.write('This is line 1.')
+... 
+>>> with open('C://Python312//ch02//file2.txt', 'r') as f:
+...     f_read = f.read()
+...     print(f_read)
+... 
+>>> with open('C://Python312//ch02//file2.txt', 'w') as f:
+...     f_read = f.read()
+...     print(f_read)
+... 
+-------------------------------------------------------------------------------
+Exercise 2-79: Python file modes exercise – w+ mode
+>>> with open('C://Python312//ch02//file2.txt', 'w+') as f:
+...     f.tell()
+...     f.write('This is line 1.')
+...     f.tell()
+...     print(f.read())
+... 
+>>> with open('C://Python312//ch02//file2.txt', 'w+') as f:
+...     print(f.mode)
+...     f.write('This is line 1.')
+...     f.seek(0)
+...     print(f.read())
+...
+-------------------------------------------------------------------------------
+Exercise 2-80: Python file modes exercise – x mode
+>>> with open('C://Python312//ch02//file2.txt', 'x') as f:
+...     print(f.mode)
+...
+>>> with open('C://Python312//ch02//file4.txt', 'x') as f:
+...     print(f.mode)
+...
+-------------------------------------------------------------------------------
+Exercise 2-81: Python file modes exercise – x mode
+>>> with open('C://Python312//ch02//file5.txt', 'x+') as f:
+...     print(f.mode)
+...
+-------------------------------------------------------------------------------
+Exercise 2-82: Opening a byte file in Python
+>>> with open('C://Python212//ch02 //ex82_horse.jpg', 'rb') as horse_pic:
+...     horse_pic.seek(2)
+...     horse_pic.seek(4)
+...     print(horse_pic.tell())
+...     print(horse_pic.mode)
+... 
+-------------------------------------------------------------------------------
+Exercise 2-83: handling errors with try and except
+>>> try:
+...     countries = open('C://Python312//ch02//ex2_83_countries.txt', 'r')
+... except FileNotFoundError as e:
+...     print(str(e))
+... else:
+...     nations = countries.read()
+...     print(nations)
+...     countries.close()
+... 
+
+>>> try:
+...     countries = open('C://Python312//ch02//ex2_83_countries.txt', 'r')
+... except FileNotFoundError as e:
+...     print(str(e))
+... else:
+...     nations = countries.read()
+...     print(nations)
+...     countries.close()
+... 
+-------------------------------------------------------------------------------
+Using Python Modules
+-------------------------------------------------------------------------------
+Time module
+-------------------------------------------------------------------------------
+Exercise 2-84: import time module
+>>> import time
+>>> print(time.asctime())
+
+>> print(time.timezone)
+
+>>> from time import asctime
+>>> print(asctime())
+-------------------------------------------------------------------------------
+Sleep method
+-------------------------------------------------------------------------------
+Exercise 2-85: time.sleep() function
+#Ex2_85.py (optional)
+>>> from time import asctime, sleep
+>>> print(asctime())
+
+>>> sleep(10)
+>>> print(asctime())
+-------------------------------------------------------------------------------
+Exercise 2-86: Browse path using sys module
+# For Windows
+>>> import sys
+>>> sys.path
+
+# For Linux
+>>> import sys
+>>> sys.path
+
+# For Windows
+>>> import sys
+>>> for path in sys.path:
+...     print(path)
+... 
+
+# For Linux
+>>> import sys
+>>> for path in sys.path:
+...     print(path)
+... 
+-------------------------------------------------------------------------------
+Exercise 2-87: Adding a new FILEPATH using sys module
+# For Windows
+>>> import sys
+>>> sys.path.append('C:\Python39\my-packages')
+>>> for path in sys.path:
+...     print(path)
+... 
+
+# For Linux
+>>> import sys
+>>> sys.path.append('/Users/root/my-packages')
+>>> for path in sys.path:
+...     print(path)
+...
+-------------------------------------------------------------------------------
+Exercise 2-88: How to check builtins and sys.builin_module?
+>>> dir(__builtins__)
+
+>>> import sys
+>>> for name in sys.builtin_module_names:
+...     print (name, end=' ')
+... 
+-------------------------------------------------------------------------------
+Exercise 2-89: A simple import sys module, try & except exercise
+# ex2_89.py
+import sys
+file = 'C://Python312//ch02//test.txt' 
+try:
+    with open (file) as test_file: 
+        for line in test_file:
+            print(line.strip()) 
+except:
+    print('Could not open {}'. format(file)) 
+    sys.exit(1)
+
+C:\Python312\ch02> python C://Python312//ch02//ex2_89.py
+
+>>> with open('C://Python312//ch02//test.txt', 'w') as f:
+...     f.write('This is a test file only.')
+...     f.write('Study Python, Network, Linux and Automation all from a single book.')
+... 
+
+>>> with open('C://Python312//ch02//test.txt', 'r') as f:
+...     print(f.read())
+... 
+
+C:\Python312\ch02> python C://Python212//ch02//ex2_89.py
+-------------------------------------------------------------------------------
+Exercise 2-90: Understanding lambda by making a calculator
+Exercise
+>>> def sum(x, y):
+...     return x +y
+...
+>>> sum(3, 2)
+
+>>> sum = lambda x, y: x + y
+>>> sum(3, 2)
+
+>>> lamb_cal = [lambda x,y:x+y, lambda x,y:x-y, lambda x,y:x*y, lambda x,y:x/y]
+>>> lamb_cal[0]
+
+>>> lamb_cal[0](3, 2)
+
+>>> lamb_cal[1]
+
+>>> lamb_cal[1](3, 2)
+
+>>> lamb_cal[2]
+
+>>> lamb_cal[2](3, 2)
+
+>>> lamb_cal[3]
+
+>>> lamb_cal[3](3, 2)
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
