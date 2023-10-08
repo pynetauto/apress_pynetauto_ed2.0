@@ -52,7 +52,7 @@ The current crypto throughput level is 1000000 kbps
 
 
 cisco C8300-1N1S-6T (1RU) processor with 3763047K/6147K bytes of memory.
-Processor board ID FDO2320A0CF
+Processor board ID FDO1353B0CF
 Router operating mode: Autonomous
 6 Gigabit Ethernet interfaces
 32768K bytes of non-volatile configuration memory.
