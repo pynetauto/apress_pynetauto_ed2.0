@@ -1,4 +1,4 @@
-SYDCBDPIT-ST01#sh ip int brief
+sydcbdpit-st01#sh ip int brief
 Interface              IP-Address      OK? Method Status                Protocol
 Vlan1                  unassigned      YES NVRAM  up                    up
 Vlan50                 10.50.50.11     YES NVRAM  up                    up
