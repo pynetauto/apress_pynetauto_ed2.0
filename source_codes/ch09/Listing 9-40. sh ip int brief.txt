@@ -1,0 +1,8 @@
+SYDCBDPIT-ST01#sh ip int brief
+Interface              IP-Address      OK? Method Status                Protocol
+Vlan1                  unassigned      YES NVRAM  up                    up
+Vlan50                 10.50.50.11     YES NVRAM  up                    up
+FastEthernet0          unassign	ed      YES NVRAM  down                  down
+GigabitEthernet1/0/1   unassigned      YES unset  down                  down
+GigabitEthernet1/0/2   unassigned      YES unset  up                    up
+GigabitEthernet1/0/3   unassigned      YES unset  up                    up
