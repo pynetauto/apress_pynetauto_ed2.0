@@ -1,0 +1,776 @@
+URL: https://github.com/pynetauto/apress_pynetauto_ed2.0/tree/main/source_codes/ch09
+
+-------------------------------- THE START --------------------------------------
+Listing 9-1. Native Python Methods
+>>> sw_mac = '''pynetauto-sw01 84:3d:c6:05:09:11
+... pynetauto-sw17 80:7f:f8:80:71:1b
+... pynetauto-sw05 f0:62:81:5a:53:cd'''
+>>>
+>>> sw_mac = sw_mac.replace(":", "").upper() # 1
+>>> sw_mac
+'\nPYNETAUTO-SW01 843DC6050911 \nPYNETAUTO-SW17 807FF880711B \nPYNETAUTO-SW05 F062815A53CD\n'
+>>> list1 = sw_mac.split(" ") # 2
+>>> list1
+['\nPYNETAUTO-SW01', '843DC6050911', '\nPYNETAUTO-SW17', '807FF880711B', '\nPYNETAUTO-SW05', 'F062815A53CD\n']
+>>> list2 = [] # 3
+>>> for i in list1:  # 4
+...     list2.append(i.strip())  # 5
+...
+>>> list2
+['PYNETAUTO-SW01', '843DC6050911', 'PYNETAUTO-SW17', '807FF880711B', 'PYNETAUTO-SW05', 'F062815A53CD']
+>>>
+>>> sw_list =  [] # 6
+>>> mac_list = [] # 7
+>>> for i in list2: # 8
+...     if len(i) == 14: # 9
+...         sw_list.append(i) # 10
+...     if len(i) == 12:  # 11
+...         i = i[:6] + "******" # 12
+...         mac_list.append(i) # 13
+...
+>>> sw_list
+['PYNETAUTO-SW01', 'PYNETAUTO-SW17', 'PYNETAUTO-SW05']
+>>> mac_list
+['843DC6******', '807FF8******', 'F06281******']
+>>> sw_mac_dict = dict(zip(sw_list, mac_list)) # 14
+>>> for k,v in sw_mac_dict.items(): # 15
+...     print(k, v) # 16 lines
+...
+PYNETAUTO-SW01 843DC6******
+PYNETAUTO-SW17 807FF8******
+PYNETAUTO-SW05 F06281******
+----------------------------------------------------------------------
+Listing 9-2. re Example
+>>> sw_mac = '''pynetauto-sw01 84:3d:c6:05:09:11
+... pynetauto-sw17 80:7f:f8:80:71:1b
+... pynetauto-sw05 f0:62:81:5a:53:cd'''
+>>> import re # 1
+>>> sw_mac = sw_mac.replace(":", "").upper() # 2
+>>> pattern = re.compile("([0-9A-F]{6})" "([0-9A-F]{6})") # 3
+>>> print(pattern.sub("\g<1>******", sw_mac)) # 4
+PYNETAUTO-SW01 843DC6******
+PYNETAUTO-SW17 807FF8******
+PYNETAUTO-SW05 F06281******
+----------------------------------------------------------------------
+Listing 9-3. Regular Expression on Python Interpreter
+jdoe@u22s1:~$ pwd
+/home/pynetauto
+jdoe@u22s1:~$ mkdir ex_regex && cd ex_regex
+jdoe@u22s1:~/ex_regex$ nano sh_ver.txt
+jdoe@u22s1:~/ex_regex$ ls
+sh_ver.txt
+jdoe@u22s1:~/ex_regex$ python3
+Python 3.10.12 (main, Jun 11 2023, 05:26:28) [GCC 11.4.0] on linux
+Type "help", "copyright", "credits" or "license" for more information. 
+>>> import re
+>>> with open("/home/jdoe/ex_regex/sh_ver.txt") as f:
+...     read_file = f.read()
+...
+>>> # Only match the Cisco Catalyst model number from the show version output.
+>>> rtr_model = re.findall(r'C\d{4}[^\s]+', read_file)
+>>> print(rtr_model)
+['C8300-1N1S-6T']
+>>> router_model= rtr_model[0]
+>>> router_model
+'C8300-1N1S-6T'
+----------------------------------------------------------------------
+Listing 9-4. Regular Expression Writing Python Code on Linux
+jdoe@u22s1:~/ex_regex$ pwd
+/home/jdoe/ex_regex
+jdoe@u22s1:~/ex_regex$ ls
+sh_ver.txt
+jdoe@u22s1:~/ex_regex$ nano ex9.4_sh_ver.py
+jdoe@u22s1:~/ex_regex$ cat ex9.4_sh_ver.py
+import re
+with open("/home/jdoe/ex_regex/sh_ver.txt") as f:
+    read_file = f.read()
+# Only match the Cisco Catalyst model number from the show version output.
+rtr_model = re.findall(r'C\d{4}[^\s]+', read_file)
+print(rtr_model)
+router_model = rtr_model[0]
+print(router_model)
+jdoe@u22s1:~/ex_regex$ python3 ex9.4_sh_ver.py
+['C8300-1N1S-6T']
+C8300-1N1S-6T
+---------------------------------------------------------------------- 
+Listing 9-5. Matching Metacharacter ^ and \ Using Square Brackets ([ ])
+>>> import re
+>>> expr = " . ^ $ * + ? \ | ( ) [ ] { }"
+>>> re.search(r'[\^]', expr)
+<re.Match object; span=(3, 4), match='^'>
+>>> re.search(r'[\\]', expr)
+<re.Match object; span=(13, 14), match='\\'>
+----------------------------------------------------------------------
+Listing 9-6. Meaning of [^a]
+>>> import re
+>>> re.findall('[^a]', 'abracadabra')
+['b', 'r', 'c', 'd', 'b', 'r']
+----------------------------------------------------------------------
+Listing 9-7. Meaning of [\]]
+>>> re.search(r'[\\]', 'match \ or ]')
+<re.Match object; span=(6, 7), match='\\'>
+>>> re.search(r'[\]]', 'match \ or ]')
+<re.Match object; span=(11, 12), match=']'>
+----------------------------------------------------------------------
+Listing 9-8. re.match() method 1
+>>> import re
+>>> re.match(r'\d\w\d{4}', '0x2142 Configuration register is 0x2102')
+<re.Match object; span=(0, 6), match='0x2142'>
+----------------------------------------------------------------------
+Listing 9-9. re.match() method 2
+>>> import re
+>>> expr = '0x2142 Configuration register is 0x2102'
+>>> re.match(r'\d\w\d{4}', expr)
+<re.Match object; span=(0, 6), match='0x2142'>
+----------------------------------------------------------------------
+Listing 9-10. re.match() method 3
+>>> import re
+>>> expr = '0x2142 Configuration register is 0x2102'
+>>> p = re.compile(r'\d\w\d{4}')
+>>> m = p.match(expr)
+>>> print(m)
+<re.Match object; span=(0, 6), match='0x2142'>
+----------------------------------------------------------------------
+Listing 9-11. re.match() exercise 1
+>>> import re
+>>> p = re.compile('[a-z]+')
+>>> expr = "five regular expressions"
+>>> m = p.match(expr)
+>>> print(m)
+<re.Match object; span=(0, 4), match='five'>
+----------------------------------------------------------------------
+Listing 9-12. re.match() exercise 2
+>>> import re
+>>> p = re.compile('[a-z]+')
+>>> expr = "5 regular expressions"
+>>> m = p.match(expr)
+>>> print(m)
+None
+----------------------------------------------------------------------
+Listing 9-13. re.search() exercise 1
+>>> import re # importe the ‘re’ module
+>>> p = re.compile('[a-z]+') # write your regex expression using re.compile method
+>>> expr = "five regular expressions" # add the string you want to perform a search
+>>> m = p.search(expr) # use re.search() to match the first item
+>>> print(m)
+<re.Match object; span=(0, 4), match='five'>
+>>> print(m[0])
+five
+----------------------------------------------------------------------
+Listing 9-14. re.search() exercise 2
+>>> import re
+>>> p = re.compile('[a-z]+') # pattern
+>>> expr = "5 regular expressions" # expression
+>>> m = p.search(expr) # match
+>>> print(m)
+<re.Match object; span=(2, 9), match='regular'>
+----------------------------------------------------------------------
+Listing 9-15. re.findall() exercise 1
+>>> import re
+>>> p = re.compile('[a-z]+')
+>>> expr = "five regular expressions"
+>>> m = p.findall(expr)
+>>> print(m)
+['five', 'regular', 'expression']
+----------------------------------------------------------------------
+Listing 9-16. re.findall() exercise 2
+>>> import re
+>>> p = re.compile('[a-z]+')
+>>> expr = "5 regular expressions"
+>>> m = p.findall(expr)
+>>> print(m)
+['regular', 'expression']
+----------------------------------------------------------------------
+Listing 9-17. re.finditer() exercise 1
+>>> import re
+>>> p = re.compile('[a-z]+')
+>>> expr = "five regular expressions"
+>>> m = p.finditer(expr)
+>>> print(m)
+<callable_iterator object at 0x000001E581F1B5E0>
+>>> for r in m:
+...     print(r)
+...
+<re.Match object; span=(0, 4), match='five'>
+<re.Match object; span=(5, 12), match='regular'>
+<re.Match object; span=(13, 23), match='expression'>
+----------------------------------------------------------------------
+Listing 9-18. re.finditer() exercise 2
+>>> import re
+>>> p = re.compile('[a-z]+')
+>>> expr = "5 regular expression"
+>>> m = p.finditer(expr)
+>>> print(m)
+<callable_iterator object at 0x000001E581F1B5E0>
+>>> for r in m: print(r) #A loop statement on a single line can be concise but may be confusing.
+...
+<re.Match object; span=(2, 9), match='regular'>
+<re.Match object; span=(10, 20), match='expression'>
+----------------------------------------------------------------------
+Listing 9-19. re.match()
+>>> import re
+>>> p = re.compile('[a-z]+') # pattern
+>>> expr = "automation" # expression
+>>> m = p.match(expr) # match
+>>> print(m)
+<re.Match object; span=(0, 10), match='automation'>
+>>> m.group()
+'automation'
+>>> m.start() # the first matched position is 0, indexing begins with 0 in Python
+0
+>>> m.end() # the object (word) has 10 characters (index 0-9), so the end position is 10 (or n-1)
+10
+>>> m.span() # span will display both the start and end positions of the matched object
+(0, 10)
+----------------------------------------------------------------------
+Listing 9-20. re.search()
+>>> import re
+>>> p = re.compile('[a-z]+') # compile for alphabets ‘a-z’
+>>> expr = "5 regular expressions"
+>>> m = p.search(expr)
+>>> print(m)
+<re.Match object; span=(2, 9), match='regular'>
+>>> m.group # use the method without the brackets to display attributes
+<built-in method group of re.Match object at 0x7faa9fc0f0c0>
+>>> m.group() # group matches the first object, ‘regular’
+'regular'
+>>> m.start() # the starting ‘r’ in ‘regular’ has an index of 2
+2
+>>> m.end() # the ending ‘r’ in ‘regular’ has an index of 9
+9
+>>> m.span # use the method without the brackets to display attributes
+<built-in method span of re.Match object at 0x7faa9fc0f0c0>
+>>> m.span() # to see the attributes in a friendly format, add the round brackets
+(2, 9)
+----------------------------------------------------------------------
+Listing 9-21. Without re.DOTALL()
+>>> import re
+>>> expr = 'a\nb' # expression
+>>> p = re.compile('a.b') # pattern
+>>> m = p.match(expr) # match
+>>> print(m)
+None # No match found due to the use of the newline character, ‘\n’
+----------------------------------------------------------------------
+Listing 9-22. re.DOTALL()
+>>> import re
+>>> expr = 'a\nb' # define a string with a newline character.
+>>> p = re.compile('a.b', re.DOTALL) # compile the regular expression with the DOTALL option.
+>>> m = p.match(expr) # attempt to match the expression.
+>>> m
+<re.Match object; span=(0, 3), match='a\nb'> # Match object successfully captures 'a\nb'.
+>>> print(m[0]) # print the matched substring, which includes the newline character.
+a
+b
+----------------------------------------------------------------------
+Listing 9-23. re.IGNORECASE()
+>>> import re
+>>> expr1 = 'automation'
+>>> expr2 = 'Automation'
+>>> expr3 = 'AUTOMATION'
+>>> p = re.compile('[a-z]+', re.IGNORECASE)
+>>> m1 = p.match(expr1)
+>>> print(m1)
+<re.Match object; span=(0, 10), match='automation'>
+>>> m2 = p.match(expr2)
+>>> print(m2)
+<re.Match object; span=(0, 10), match='Automation'>
+>>> m3 = p.match(expr3)
+>>> print(m3)
+<re.Match object; span=(0, 10), match='AUTOMATION'>
+----------------------------------------------------------------------
+Listing 9-24. without re.MULTILINE()
+>>> import re
+>>> expr = '''Regular Engineers
+... Regular Network Engineers
+... Regular but not so regular Engineers'''
+>>> p = re.compile('^R\w+\S') # match ‘R’ at the line start and end at the first non-whitespace character 
+>>> m = p.findall(expr)
+>>> print(m)
+['Regular'] # only matches the first substring on the first line
+----------------------------------------------------------------------
+Listing 9-25. ^ and re.MULTILINE()
+>>> import re
+>>> expr = '''Regular Engineers
+... Regular Network Engineers
+... Regular but not so Regular Engineers'''
+>>> p = re.compile('^R\w+\S', re.MULTILINE) # match ‘R’ at the line start and end at the first non-whitespace character on multiple lines
+>>> m = p.findall(expr)
+>>> print(m)
+['Regular', 'Regular', 'Regular'] # matches all three substrings on three different lines
+
+----------------------------------------------------------------------
+Listing 9-26. Without re.VERBOSE
+>>> import re
+>>> expr = 'I was born in 2,009 and I am 15 years old. I started my primary school in 2,015'
+>>> p = re.compile(r'[1-9](?:\d{0,2})(?:,\d{3})*(?:\.\d*[1-9])?|0?\.\d*[1-9]|0')
+>>> m = p.findall(expr)
+>>> print(m)
+['2,009', '15', '2,015']
+----------------------------------------------------------------------
+Listing 9-27. With re.VERBOSE
+>>> import re
+>>> expr = 'I was born in 2,009 and I am 15 years old. I started my primary school in 2,015'
+>>> # Define a regular expression pattern with comments
+>>> p = re.compile(r"""
+... [1-9] # Match a single digit between 1 and 9
+... (?:\d{0,2}) # Match a digit between 0-9, 0 to 2 times
+... (?:,\d{3})* # Match a comma, followed by 3 digits, zero or more times
+... (?:\.\d*[1-9])? # Match a dot, followed by digits (optional), ending with a non-zero digit (optional)
+... | # OR
+... 0?\.\d*[1-9] # Match 0 once or not at all, then a dot, followed by digits (optional), ending with a non-zero digit
+... | # OR
+... 0 # Match a single 0
+... """, re.VERBOSE)
+>>> m = p.findall(expr)
+>>> print(m)
+['2,009', '15', '2,015']
+----------------------------------------------------------------------
+Listing 9-28. Backslashes Without Raw String Notation
+>>> import re
+>>> expr = 'Our team \scored three goals\\'
+>>> p1 = re.compile('\scored')
+>>> p2 = re.compile('\\scored')
+>>> p3 = re.compile('\\\scored')
+>>> p4 = re.compile('\\\\scored')
+>>> p5 = re.compile('\\\\\scored')
+>>> print(p1.findall(expr))
+[] # no match, returns an empty list
+>>> print(p2.findall(expr))
+[] 
+>>> print(p3.findall(expr))
+['\\scored']
+>>> print(p4.findall(expr))
+['\\scored']
+>>> print(p5.findall(expr))
+[]
+----------------------------------------------------------------------
+Listing 9-29. Backslash with Raw String Notation
+>>> import re
+>>> expr = 'Our team \scored three goals\\'
+>>> p1 = re.compile(r'\scored')
+>>> p2 = re.compile(r'\\scored')
+>>> p3 = re.compile(r'\\\scored')
+>>> p4 = re.compile(r'\\\\scored')
+>>> print(p1.findall(expr))
+[] # no match, returns an empty list
+>>> print(p2.findall(expr))
+['\\scored']
+>>> print(p3.findall(expr))
+[]
+>>> print(p4.findall(expr))
+[]
+----------------------------------------------------------------------
+Listing 9-30. Backslash with Raw String Notation
+>>> import re
+>>> expr = 'Our team \scored three goals\\'
+>>> p2 = re.compile(r'\\scored')
+>>> m = p2.findall(expr)
+>>> print(m)
+['\\scored']
+>>> n = m[0] # assign the first element of the list m to the variable n.
+>>> n
+'\\scored'
+>>> for x in n:
+...     print(x, end=")
+...
+\scored
+----------------------------------------------------------------------
+Listing 9-31. a[bc]
+>>> import re
+>>> re.findall('a[bc]', 'a, ab, ac, abc, acb, ad')
+['ab', 'ac', 'ab', 'ac']
+----------------------------------------------------------------------
+Listing 9-32. a(b|c)
+>>> re.findall('a(b|c)', 'a, ab, ac, abc, acb, ad')
+['b', 'c', 'b', 'c']
+----------------------------------------------------------------------
+Listing 9-33. 3[a-f]
+>>> re.findall('3[a-f]', '3, 3a, 3c, 3f, 3g')
+['3a', '3c', '3f']
+----------------------------------------------------------------------
+Listing 9-34. 3(a|b|c|d|e|f)
+>>> re.findall('3(a|b|c|d|e|f)', '3, 3a, 3c, 3f, 3g')
+['a', 'c', 'f']
+----------------------------------------------------------------------
+Listing 9-35. apple|rasberry
+>>> re.match('apple|raspberry', 'raspberry pie')
+<re.Match object; span=(0, 8), match='rasberry'>
+----------------------------------------------------------------------
+Listing 9-36. apple|rasberry
+>>> print(re.findall('apple|raspberry', 'raspberry and apple pie'))
+['raspberry, 'apple']
+----------------------------------------------------------------------
+Listing 9-37. ^Start
+>>> re.findall('^Start', 'Start to finish')
+['Start']
+----------------------------------------------------------------------
+Listing 9-38. finish$
+>>> re.findall('finish$', 'Start to finish')
+['finish']
+----------------------------------------------------------------------
+Listing 9-39. ^S.+sh$
+>>> re.findall('^S.+sh$', 'Start to finish')
+['Start to finish']
+----------------------------------------------------------------------
+Listing 9-40. ^S.+sh$' and re.M
+>>> re.findall('^S.+sh$', 'Start to finish\nSpecial fish\nSuper fresh', re.MULTILINE)
+['Start to finish', 'Special fish', 'Super fresh']
+----------------------------------------------------------------------
+Listing 9-41. ^Gig.+up$ and re.M
+>>> import re
+>>> expr = '''
+... sydcbdpit-st01#sh ip int brief
+... Interface              IP-Address      OK? Method Status                Protocol
+... Vlan1                  unassigned      YES NVRAM  up                    up
+... Vlan50                 10.50.50.11     YES NVRAM  up                    up
+... FastEthernet0          unassigned      YES NVRAM  down                  down
+... GigabitEthernet1/0/1   unassigned      YES unset  down                  down
+... GigabitEthernet1/0/2   unassigned      YES unset  up                    up
+... GigabitEthernet1/0/3   unassigned      YES unset  up                    up
+... '''
+>>> p1 = re.compile('^Gig.+down$', re.MULTILINE) # Look for a line starting with Gig and ending with the word ‘down’.
+>>> m1 = p1.findall(expr) # match 1
+>>> print(m1)
+['GigabitEthernet1/0/1   unassigned      YES unset  down                  down']
+>>> p2 = re.compile('^Gig.+up$', re.MULTILINE) # change to ‘up’ to find online Gig interfaces
+>>> m2 = p2.findall(expr) # match 2
+>>> for up_gint in m2: # use the for loop to print each item on each line
+...     print(up_gint)
+...
+GigabitEthernet1/0/2   unassigned      YES unset  up                    up
+GigabitEthernet1/0/3   unassigned      YES unset  up                    up
+----------------------------------------------------------------------
+Listing 9-42. ^S.+sh
+# Matches lines starting with 'S' and ending with 'sh' in a single-line string.
+>>> re.findall('^S.+sh', 'Start to finish')
+['Start to finish']
+----------------------------------------------------------------------
+Listing 9-43. \AS.+sh
+# Matches lines starting with 'S' and ending with 'sh' but only if it's at the start of the entire single-line string.
+>>> re.findall('\AS.+sh', 'Start to finish')
+['Start to finish']
+----------------------------------------------------------------------
+Listing 9-44. ^S.+sh with re.MULTILINE
+# Matches lines starting with 'S' and ending with 'sh', where 'S' can appear anywhere before 'sh', across multiple lines.
+>>> import re
+>>> re.findall('^S.+sh', 'Start to finish\nSuper special fish\nSuper fresh fish\nSuper smelly fish', re.M)
+['Start to finish', 'Super special fish', 'Super fresh fish', 'Super smelly fish']
+----------------------------------------------------------------------
+Listing 9-45. \AS.+sh with re.MULTILINE
+# Matches lines starting with 'S' and ending with 'sh', but only at the start of each line in the multi-line string.
+>>> re.findall('\AS.+sh', 'Start to finish\nSuper special fish\nSuper fresh fish\nSuper smelly fish', re.M)
+['Start to finish']
+----------------------------------------------------------------------
+Listing 9-46. S.+sh$ with re.MULTILINE
+# Matches lines ending with 'sh', where 'S' can appear anywhere before 'sh', across multiple lines.
+>> re.findall('S.+sh$', 'Start to finish\nSuper special fish\nSuper fresh fish\nSuper smelly fish', re.M)
+['Start to finish', 'Super special fish', 'Super fresh fish', 'Super smelly fish']
+----------------------------------------------------------------------
+Listing 9-47. S.+sh\Z with re.MULTILINE
+# Matches lines ending with 'sh', where 'S' can appear anywhere before 'sh', but only if they are the whole string, not just a part, across multiple lines.
+>>> re.findall('S.+sh\Z', 'Start to finish\nSuper special fish\nSuper fresh fish\nSuper smelly fish', re.M)
+['Super smelly fish']
+----------------------------------------------------------------------
+Listing 9-48. ^S.+sh$ with re.M
+# Matches lines starting with 'S' and ending with 'sh', across multiple lines.
+>>> re.findall('^S.+sh$', 'Start to finish\nSuper special fish\nSuper fresh fish\nSuper smelly fish', re.M)
+['Start to finish', 'Super special fish', 'Super fresh fish', 'Super smelly fish']
+----------------------------------------------------------------------
+Listing 9-49. \AS.+sh$ with re.M
+# Matches lines starting with 'S' and ending with 'sh', but only at the start of the entire string.
+>>> re.findall('\AS.+sh$', 'Start to finish\nSuper special fish\nSuper fresh fish\nSuper smelly fish', re.M)
+['Start to finish']
+----------------------------------------------------------------------
+Listing 9-50. ^S.+sh\Z with re.M
+# Matches lines starting with 'S' and ending with 'sh', but only if they are the whole string, not just a part.
+>>> re.findall('^S.+sh\Z', 'Start to finish\nSuper special fish\nSuper fresh fish\nSuper smelly fish', re.M)
+['Super smelly fish']
+----------------------------------------------------------------------
+Listing 9-51. \AS.+sh\Z with re.M
+# Tries to match lines starting with 'S' and ending with 'sh', but it can't find a complete match, resulting in an empty list.
+>>> re.findall('\AS.+sh\Z', 'Start to finish\nSuper special fish\nSuper fresh fish\nSuper smelly fish', re.M)
+[]
+----------------------------------------------------------------------
+Listing 9-52. \b(word)\b matched
+>>> import re
+>>> expr = "Small computers include smartphones."
+>>> p = re.compile(r'\bcomputers\b')
+>>> m = p.search(expr)
+>>> print(m)
+<re.Match object; span=(6, 15), match='computers'>
+----------------------------------------------------------------------
+Listing 9-53. \b(word)\b not match
+>>> import re
+>>> expr = "Microcomputers include smartphones."
+>>> p = re.compile(r'\bcomputers\b')
+>>> m = p.search(expr)
+>>> print(m)
+None
+----------------------------------------------------------------------
+Listing 9-54. (word)\b matched
+>>> import re
+>>> expr = "Microcomputers include smartphones."
+>>> p = re.compile(r'computers\b')
+>>> m = p.search(expr)
+>>> print(m)
+<re.Match object; span=(5, 14), match='computers'>
+----------------------------------------------------------------------
+Listing 9-55. \B(word)\B matched
+>>> import re
+>>> expr = "Microcomputers include smartphones."
+>>> p = re.compile(r'\Bcomputer\B')
+>>> m = p.search(expr)
+>>> print(m)
+<re.Match object; span=(5, 13), match='computer'>
+----------------------------------------------------------------------
+Listing 9-56. Grouping exercise 1
+>>> import re
+>>> expr = "downupupupdowndownupdowndown"
+>>> p = re.compile("(up)+")
+>>> m = p.search(expr)
+>>> print(m)
+<re.Match object; span=(4, 10), match='upupup'>
+>>> print(m.group(0))
+upupup
+----------------------------------------------------------------------
+Listing 9-57. Grouping exercise 2
+>>> import re
+>>> expr = "United States 1 408 526 1234"
+>>> p = re.compile(r"\w+\s\w+\s\d\s\d{3}\s\d{3}\s\d+")
+>>> m = p.search(expr)
+>>> print(m)
+<re.Match object; span=(0, 28), match='United States 1 408 526 1234'>
+----------------------------------------------------------------------
+Listing 9-58. Grouping exercise 3
+>>> import re
+>>> expr = "United States 1 408 526 1234"
+>>> p = re.compile(r"(\w+\s\w+)\s\d?\s\d{3}\s\d{3}\s\d+")
+>>> m = p.search(expr)
+>>> print(m)
+<re.Match object; span=(0, 28), match='United States 1 408 526 1234'>
+>>> country = m.group(1)
+>>> country
+'United States'
+----------------------------------------------------------------------
+Listing 9-59. Grouping Method Indexing Exercise 1
+>>> import re
+>>> expr = "United States 1 408 526 1234"
+>>> p = re.compile(r"(\w+\s\w+)\s(\d?\s\d{3}\s\d{3}\s\d+)")
+>>> m = p.search(expr)
+>>> print(m)
+<re.Match object; span=(0, 28), match='United States 1 408 526 1234'>
+>>> phone_number = m.group(2)
+>>> phone_number
+'1 408 526 1234'
+----------------------------------------------------------------------
+Listing 9-60. Grouping Method Indexing exercise 2
+>>> import re
+>>> expr = "United States 1 408 526 1234"
+>>> p = re.compile(r"(\w+\s\w+)\s((\d?)\s(\d{3})\s(\d{3}\s\d+))")
+>>> m = p.search(expr)
+>>> m.group(0)
+'United States 1 408 526 1234'
+>>> m.group(1)
+'United States'
+>>> m.group(2)
+'1 408 526 1234'
+>>> m.group(3)
+'1'
+>>> m.group(4)
+'408'
+>>> m.group(5)
+'526 1234'
+----------------------------------------------------------------------
+Listing 9-61. Referencing Grouped String
+>>> import re
+>>> expr = "Did you know that that 'that', that that person used in that sentence, is wrong."
+>>> p = re.compile(r'(\bthat)\s+\1') # Matches "that" followed by spaces and the same "that" again.
+>>> m = p.search(expr)
+>>> print(m)
+<re.Match object; span=(13, 22), match='that that'>
+>>> m = p.search(expr).group()
+>>> print(m)
+that that
+----------------------------------------------------------------------
+Listing 9-62. Multiple Numbered Groups exercise
+>>> import re
+>>> expr = "SYD-GW1 uptime is 1 year, 9 weeks, 2 days, 5 hours, 26 minutes"
+>>> p = re.compile(r'(\w+[-]\w+)\s.+((\d+\sy\w+),\s(\d+\sw\w+),\s(\d+\sd\w+),\s(\d+\sh\w+),\s(\d+\sm\w+))')
+>>> m = p.search(expr)
+>>> print(m.group(0))
+SYD-GW1 uptime is 1 year, 9 weeks, 2 days, 5 hours, 26 minutes
+>>> print(m.group(1))
+SYD-GW1
+>>> print(m.group(2))
+1 year, 9 weeks, 2 days, 5 hours, 26 minutes
+>>> print(m.group(2), sep=' | ')
+1 year, 9 weeks, 2 days, 5 hours, 26 minutes # single group, group 2 only
+>>> print(m.group(3))
+1 year
+[…omitted for brevity]
+>>> print(m.group(7))
+26 minutes
+>>> print(m.group(3), m.group(4), m.group(5), m.group(6), m.group(7), sep=' | ')
+1 year | 9 weeks | 2 days | 5 hours | 26 minutes # five groups from 3 to 7
+----------------------------------------------------------------------
+Listing 9-63. Named Group exercise
+>>> import re
+>>> expr = "SYD-GW1 uptime is 1 year, 9 weeks, 2 days, 5 hours, 26 minutes"
+>>> p_named = re.compile(r'(?P<hostname>\w+[-]\w+)\s.+(?P<uptime>(?P<years>\d+\sy\w+),\s(?P<weeks>\d+\sw\w+),\s(?P<days>\d+\sd\w+),\s(?P<hours>\d+\sh\w+),\s(?P<minutes>\d+\sm\w+))')
+>>> m = p_named.search(expr)
+>>> print(m.group("hostname"))
+SYD-GW1
+>>> print(m.group("uptime"))
+1 year, 9 weeks, 2 days, 5 hours, 26 minutes
+>>> print(m.group("years"), m.group("weeks"), m.group("days"), m.group("hours"), m.group("minutes"), sep=" | ")
+1 year | 9 weeks | 2 days | 5 hours | 26 minutes
+----------------------------------------------------------------------
+Listing 9-64. Only Use Lookahed Method to Print http
+>>> import re
+>>> m = (re.search(r"\w{4,5}(?=:)", "http://www.cisco.com/techsupport"))
+>>> print(m.group())
+http
+----------------------------------------------------------------------
+Listing 9-65. Only Use Lookahead and Lookbehind Method to Print www.cisco.com
+>>> import re
+>>> m = (re.search(r"(?<=\/)\w.+[.]\w+[.]\w+(?=/)", "http://www.cisco.com/techsupport"))
+>>> print(m.group())
+www.cisco.com
+----------------------------------------------------------------------
+Listing 9-66. Match All File Types Using Regular Expression - .*[.].*$
+>>> import re
+>>> expr = "vlan.dat\nsw1.bak\nconfig.txt\njdoe.dat\nsw1_old.bak\ncat9k_iosxe.16.12.01.SPA.bin"
+>>> m = re.findall(".*[.].*$", expr, re.M)
+>>> m
+['vlan.dat', 'sw1.bak', 'config.txt', 'jdoe.dat', 'sw1_old.bak', 'cat9k_iosxe.16.12.01.SPA.bin']
+----------------------------------------------------------------------
+Listing 9-67. Filter files with file extensions not starting with the letter d (Not using the lookaround method)
+>>> import re
+>>> expr = "vlan.dat\nsw1.bak\nconfig.txt\njdoe.dat\nsw1_old.bak\ncat9k_iosxe.16.12.01.SPA.bin"
+>>> m = re.findall(r".*[.][^d].*$", expr, re.M)
+>>> m
+['sw1.bak', 'config.txt', 'sw1_old.bak', 'cat9k_iosxe.16.12.01.SPA.bin']
+----------------------------------------------------------------------
+Listing 9-68. Filter files with file extensions not starting with the letter d (using the lookaround method)
+>>> import re
+>>> expr = "vlan.dat\nsw1.bak\nconfig.txt\njdoe.dat\nsw1_old.bak\ncat9k_iosxe.16.12.01.SPA.bin"
+>>> m = re.findall(r".*[.](?!dat$).*$", expr, re.M)
+>>> m
+['sw1.bak', 'config.txt', 'sw1_old.bak', 'cat9k_iosxe.16.12.01.SPA.bin ']
+----------------------------------------------------------------------
+Listing 9-69. Filter Any Files Ending with .dat and .bak Without Using Lookaround Method
+>>> import re
+>>> expr = "vlan.dat\nsw1.bak\nconfig.txt\njdoe.dat\nsw1_old.bak\ncat9k_iosxe.16.12.01.SPA.bin"
+>>> m = re.findall(r".*[.][^d|^b].*$", expr, re.M)
+>>> m
+['config.txt', 'cat9k_iosxe.16.12.01.SPA.bin']
+----------------------------------------------------------------------
+Listing 9-70. Filter Any Files Ending with dat and bak Using the Lookaround Method
+>>> import re
+>>> expr = "vlan.dat\nsw1.bak\nconfig.txt\njdoe.dat\nsw1_old.bak\ncat9k_iosxe.16.12.01.SPA.bin"
+>>> m = re.findall(r".*[.](?!dat$|bak$).*$", expr, re.M)
+>>> m
+['config.txt', 'cat9k_iosxe.16.12.01.SPA.bin']
+----------------------------------------------------------------------
+Listing 9-71. Filter Any Files Ending with dat or bak Using the ^ Negation Method
+>>> import re
+>>> expr = "file1.bak\nfile2.dat\nfile3.bakup\nfile4.data"
+>>> m = re.findall(r".*[.][^d|^b].*$", expr, re.M)
+>>> m
+[] # no match, returns an empty list
+----------------------------------------------------------------------
+Listing 9-72. Filter Any Files Ending with dat or bak Using Negative Lookahead Method
+>>> import re
+>>> expr = "file1.bak\nfile2.dat\nfile3.bakup\nfile4.data"
+>>> m = re.findall(r".*[.](?!dat$|bak$).*$", expr, re.M)
+>>> m
+['file3.bakup', 'file4.data'] # returns all file types excluding the .dat or .bak files
+----------------------------------------------------------------------
+Listing 9-73. Use sub to substitute multiple matching words
+>>> import re
+>>> p = re.compile('HP|Juniper|Arista')
+>>> p.sub('Cisco', 'Juniper router, HP switch, Arista AP and Palo Alto firewall')
+'Cisco router, Cisco switch, Cisco AP and Palo Alto firewall'
+----------------------------------------------------------------------
+Listing 9-74. Use sub to substitute a matching word only once
+>>> p.sub('Cisco', 'Juniper router, HP switch, Arista AP and Palo Alto firewall', count=1)
+'Cisco router, HP switch, Arista AP and Palo Alto firewall'
+----------------------------------------------------------------------
+Listing 9-75. Use subn to count the number of replacements
+>>> import re
+>>> expr = '''Juniper router, HP switch, Palo Alto firewall, Juniper router, HP switch, Palo Alto firewall, Juniper router, HP switch, Palo Alto firewall, Juniper router, HP switch, Palo Alto firewall, Juniper router, HP switch, Palo Alto firewall, Juniper router, HP switch, Palo Alto firewall, and Arista router'''
+>>> p = re.compile('HP|Juniper|Arista')
+>>> p.subn('Cisco', expr)
+('Cisco router, Cisco switch, Palo Alto firewall, Cisco router, Cisco switch, Palo Alto firewall, Cisco router, Cisco switch, Palo Alto firewall, Cisco router, Cisco switch, Palo Alto firewall, Cisco router, Cisco switch, Palo Alto firewall, Cisco router, Cisco switch, Palo Alto firewall, and Cisco router', 13)
+----------------------------------------------------------------------
+Listing 9-76. Use sub and grouping to swap positions
+>>> import re
+>>> expr = "Model Number : C8300-1N1S-6T"
+>>> p = re.compile(r"(\w+\s\w+)(\s[:]\s)(\w+[-]\w+[-]\w+)") # (grp1)(grp2)(grp3)
+>>> m = p.sub("\g<3>\g<2>\g<1>", expr)
+>>> print(m)
+C8300-1N1S-6T : Model Number
+----------------------------------------------------------------------
+Listing 9-77. mix and match numbered and named groups
+>>> import re
+>>> expr = "Model Number : C8300-1N1S-6T"
+>>> p = re.compile(r"(?P<Desc>\w+\s\w+)(\s[:]\s)(?P<Model>(\w+[-]\w+[-]\w+))")
+>>> m = p.sub("\g<Model>\g<2>\g<Desc>", expr)
+>>> print(m)
+C8300-1N1S-6T : Model Number
+----------------------------------------------------------------------
+Listing 9-78. Use sub and named group method to swap positions
+>>> import re
+>>> expr = "Model Number : C8300-1N1S-6T"
+>>> p = re.compile(r"(?P<Desc>\w+\s\w+)\s[:]\s(?P<Model>(\w+[-]\w+[-]\w+))")
+>>> m = p.sub("\g<Model> : \g<Desc>", expr)
+>>> print(m)
+C8300-1N1S-6T : Model Number
+----------------------------------------------------------------------
+Listing 9-79. Decimal to Binary Using the join Method
+>>> ip = '172.168.123.245'
+>>> print ('.'.join([bin(int(x)+256)[3:] for x in ip.split('.')]))
+10101100.10101000.01111011.11110101
+----------------------------------------------------------------------
+Listing 9-80. Decimal to Binary Using the sub Method
+>>> ip = '172.168.123.245'
+>>> def dec2bin(match):
+...     value = int(match.group())
+...     return bin(value)
+...
+>>> p = re.compile(r'\d+')
+>>> p.sub(dec2bin, ip)
+'0b10101100.0b10101000.0b1111011.0b11110101' # ‘0b’ indicates a binary number.
+----------------------------------------------------------------------
+Listing 9-81. Binary to Decimal Using Join Method
+>>> ip = "00001010.11010110.10001011.10111101"
+>>> ip1 = ip.replace(".", "") # remove the . characters
+>>> ip1
+'00001010110101101000101110111101'
+>>> def bin2dec():
+...     return ".".join(map(str, int(ip1, 2).to_bytes(4, "big")))
+...
+>>> bin2dec()
+'10.214.139.189'
+----------------------------------------------------------------------
+Listing 9-82. Hexadecimal to Decimal Numbers
+>>> mac = "84:3d:c6:f5:c9:ba"
+>>> mac1 = mac.replace(":", "")
+>>> mac1
+'843dc6f5c9ba'
+>>> i = int(mac1, 16)
+>>> str(i)
+'145400865868218'
+----------------------------------------------------------------------
+Listing 9-83. Decimal to Hexadecial
+>>> def hexrepl(match):
+...     value = int(match.group())
+...     return hex(value)
+...
+>>> p = re.compile(r"\d+")
+>>> p.sub(hexrepl, 'MAC address: 145400865868218')
+'MAC address: 0x843dc6f5c9ba' # ‘0x’ indicates a hexadecimal number.
+-------------------------------- THE END --------------------------------------
+
+
+
