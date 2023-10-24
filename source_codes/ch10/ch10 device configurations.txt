@@ -1,0 +1,103 @@
+Chapter 10 device configurations
+-------------------------------------------------------------------
+Creating an IOS Lab Topology on GNS3 and Connecting to the Internet
+-------------------------------------------------------------------
+!!! R1 initial configuration
+configure terminal
+hostname R1
+ip name-server 8.8.8.8
+interface FastEthernet0/0
+duplex full
+ip address dhcp
+no shut
+interface FastEthernet0/1
+ip address 192.0.2.1 255.255.255.0
+no shut
+exit
+router ospf 1
+network 192.0.2.0 0.0.0.255 area 0
+network 192.168.127.0 0.0.0.255 area 0
+end
+copy running-config startup-config
+!
+-------------------------------------------------------------------
+!!! R2 initial configuration
+conf t
+hostname R2
+ip dhcp excluded-address 172.168.2.1 172.168.2.21
+ip dhcp pool VPCS_2
+network 172.168.2.0 255.255.255.0
+default-router 172.168.2.1
+interface FastEthernet0/0
+ip address 192.0.2.2 255.255.255.0
+no shut
+interface FastEthernet0/1
+ip address 172.168.1.1 255.255.255.0
+no shut
+interface FastEthernet1/0
+ip address 172.168.2.1 255.255.255.0
+no shut
+exit
+router ospf 1
+network 172.168.0.0 0.0.0.255 area 0
+network 172.168.1.0 0.0.0.255 area 0
+network 172.168.2.0 0.0.0.255 area 0
+network 192.0.2.0 0.0.0.255 area 0
+exit
+ip route 0.0.0.0 0.0.0.0 192.0.2.1
+exit
+write memory
+!
+-------------------------------------------------------------------
+# IOS Telnet Lab 3
+
+# Filename: ch10_telnet1.py 
+import getpass
+import telnetlib
+HOST = "7.7.7.2"
+user = input("Enter your telnet username: ")
+password = getpass.getpass()
+tn = telnetlib.Telnet(HOST)
+tn.read_until(b"Username: ")
+tn.write(user.encode('ascii') + b"\n")
+if password:
+    tn.read_until(b"Password: ")
+    tn.write(password.encode('ascii') + b"\n")
+
+tn.write(b"configure terminal\n")
+tn.write(b"interface loopback 0\n")
+tn.write(b"ip address 1.1.1.1 255.255.255.255\n")
+tn.write(b"interface f0/1\n")
+tn.write(b"ip address 20.20.20.1 255.255.255.0\n")
+tn.write(b"no shut\n")
+tn.write(b"end\n")
+tn.write(b"show ip interface brief\n")
+tn.write(b"exit\n")
+tn.write(b"write memory\n")
+print(tn.read_all().decode('ascii'))
+
+-------------------------------------------------------------------
+#Using the GNS3 Appliance Linux’s Python to Manage R1
+
+#3
+import getpass
+import telnetlib
+tn = telnetlib.Telnet("20.20.20.1")
+tn.write("jdoe".encode('ascii') + b"\n")
+tn.write("Lion2Roar!".encode('ascii') + b"\n")
+tn.write(b"configure terminal\n")
+tn.write(b"interface loopback 5\n")
+tn.write(b"ip address 5.5.5.5 255.255.255.255\n")
+tn.write(b"end\n")
+tn.write(b"exit\n")
+print(tn.read_all().decode('ascii'))
+
+#4
+tn = telnetlib.Telnet("20.20.20.1")
+tn.write("jdoe".encode('ascii') + b"\n")
+tn.write("Lion2Roar!".encode('ascii') + b"\n")
+tn.write(b"show ip interface brief\n")
+tn.write(b"exit\n")
+print(tn.read_all().decode('ascii'))
+
+-------------------------------------------------------------------
