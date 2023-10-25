@@ -1,0 +1,47 @@
+! 1. Run this command to start tcl
+tclsh
+
+! 2. Cut and paste this conetnt to tcl file
+puts [open "flash:ch11_ping_ips.tcl" w+] {
+# Define the list of IP addresses to ping
+set ip_addresses {
+    7.7.7.1
+    192.168.127.2
+    192.168.127.10
+    192.168.127.20
+    8.8.8.8
+}
+
+# Loop through the IP addresses and ping each one
+foreach ip $ip_addresses {
+    set result [exec "ping $ip repeat 4"]
+    puts "Pinging $ip..."
+    puts "$result"
+    puts "========== pynetauto_ed2 =========="
+}
+}
+!
+! 3. Run this command to quit tcl
+tclquit
+
+
+===============================================
+ch11_ping_ips.tcl
+===============================================
+# Define the list of IP addresses to ping
+set ip_addresses {
+    7.7.7.1
+    192.168.127.2
+    192.168.127.10
+    192.168.127.20
+    8.8.8.8
+}
+
+# Loop through the IP addresses and ping each one
+foreach ip $ip_addresses {
+    set result [exec "ping $ip repeat 4"]
+    puts "Pinging $ip..."
+    puts "$result"
+    puts "========== pynetauto_ed2 =========="
+}
+
