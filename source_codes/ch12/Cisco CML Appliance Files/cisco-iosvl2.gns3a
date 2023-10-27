@@ -1,0 +1,55 @@
+{
+    "name": "Cisco IOSvL2",
+    "category": "multilayer_switch",
+    "description": "Cisco Virtual IOS L2 allows user to run a IOS switching image on a standard computer.",
+    "vendor_name": "Cisco",
+    "vendor_url": "http://www.cisco.com/",
+    "product_name": "IOSvL2",
+    "product_url": "http://virl.cisco.com/",
+    "registry_version": 3,
+    "status": "stable",
+    "maintainer": "Dtechsmag.com",
+    "maintainer_email": "admin@dtechsmag.com",
+    "usage": "There is no default password and enable password. There is no default configuration present.I'm not the owner of any file you can find on gdrive. It is avaialble on the internet.",
+    "port_name_format": "Gi{1}/{0}",
+    "port_segment_size": 4,
+    "qemu": {
+        "adapter_type": "e1000",
+        "adapters": 16,
+        "ram": 768,
+        "hda_disk_interface": "virtio",
+        "arch": "x86_64",
+        "console_type": "telnet",
+        "kvm": "require"
+    },
+    "images": [
+	    {
+            "filename": "vios_l2-k9-m.SSA.high_iron_20180619.qcow2",
+            "version": "15.2.1",
+            "md5sum": "14b981002e40b660f2d7400401e04c14",
+            "filesize": 44938752,
+            "download_url": "https://drive.google.com/open?id=1FlO7zRm_WbFV1j0QtqyLWMqyihHcZjCR"
+        },
+        {
+            "filename": "vios_l2-k9-m.vmdk.SSA.152-4.0.55.E",
+            "version": "15.2(4.0.55)E",
+            "md5sum": "1a3a21f5697cae64bb930895b986d71e",
+            "filesize": 96862208,
+            "download_url": "https://drive.google.com/open?id=1nQPZlOqN00MjddY7VvAgyG6vI6i2DfRm"
+        }
+    ],
+    "versions": [
+	     {
+            "name": "15.2.1",
+            "images": {
+                "hda_disk_image": "vios_l2-k9-m.SSA.high_iron_20180619.qcow2"
+            }
+        },
+          {
+            "name": "15.2(4.0.55)E",
+            "images": {
+                "hda_disk_image": "vios_l2-k9-m.vmdk.SSA.152-4.0.55.E"
+            }
+        }
+    ]
+}

@@ -1,0 +1,49 @@
+# For SW1 ping test after CML L2 integration
+
+tclsh
+
+# List of IP addresses to ping
+set ip_list {
+    192.168.127.2
+    192.168.127.10
+    192.168.127.20
+    192.168.127.134
+    192.168.127.135
+}
+
+# Set the timeout value in seconds
+set timeout 2
+
+foreach ip $ip_list {
+    if {[catch {ping $ip timeout $timeout} result]} {
+        puts "Ping to $ip failed: $result"
+    } else {
+        puts "Ping to $ip succeeded"
+    }
+}
+
+
+================================================
+# For R2 ping test after CML L3 integration
+
+tclsh
+
+set ip_list {
+    192.168.127.2
+    192.168.127.10
+    192.168.127.20
+    192.168.127.101
+    192.168.127.134
+    192.168.127.135
+}
+
+set timeout 2
+
+foreach ip $ip_list {
+    if {[catch {ping $ip timeout $timeout} result]} {
+        puts "Ping to $ip failed: $result"
+    } else {
+        puts "Ping to $ip succeeded"
+    }
+}
+
