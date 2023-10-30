@@ -116,7 +116,7 @@ interface GigabitEthernet3/3
  negotiation auto
 !
 interface Vlan1
- ip address 196.168.183.102 255.255.255.0
+ ip address 192.168.127.102 255.255.255.0
 !
 ip forward-protocol nd
 !
