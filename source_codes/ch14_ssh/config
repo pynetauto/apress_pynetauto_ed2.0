@@ -1,0 +1,10 @@
+# This file should go under ~/.ssh/config
+Host 192.168.127.133
+    KexAlgorithms diffie-hellman-group1-sha1
+    HostkeyAlgorithms ssh-rsa
+    Ciphers aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc
+
+Host *
+    KexAlgorithms +diffie-hellman-group-exchange-sha1,diffie-hellman-group14-sha1,diffie-hellman-group1-sha1
+    HostkeyAlgorithms +ssh-rsa
+

@@ -1,0 +1,44 @@
+[jdoe@f38s1 ~]$ sudo cat /etc/systemd/system/tftp-server.socket
+[sudo] password for jdoe:
+[Unit]
+Description=Tftp Server Activation Socket
+
+[Socket]
+ListenDatagram=69
+
+[Install]
+WantedBy=sockets.target
+
+[jdoe@f38s1 ~]$ sudo cat /etc/systemd/system/tftp-server.service
+[Unit]
+Description=Tftp Server
+Requires=tftp-server.socket
+Documentation=man:in.tftpd
+
+[Service]
+ExecStart=/usr/sbin/in.tftpd -c -p -s /var/lib/tftpboot
+StandardInput=socket
+
+[Install]
+WantedBy=multi-user.target
+Also=tftp-server.socket
+
+
+
+
+[jdoe@f38s1 ~]$ systemctl status tftp-server
+● tftp-server.service - Tftp Server
+     Loaded: loaded (/etc/systemd/system/tftp-server.service; enabled; preset: disabled)
+    Drop-In: /usr/lib/systemd/system/service.d
+             └─10-timeout-abort.conf
+     Active: active (running) since Sun 2023-11-05 14:42:06 AEDT; 3min 34s ago
+TriggeredBy: ● tftp-server.socket
+       Docs: man:in.tftpd
+   Main PID: 3492 (in.tftpd)
+      Tasks: 1 (limit: 4632)
+     Memory: 196.0K
+        CPU: 20ms
+     CGroup: /system.slice/tftp-server.service
+             └─3492 /usr/sbin/in.tftpd -c -p -s /var/lib/tftpboot
+
+Nov 05 14:42:06 f38s1.pynetauto.com systemd[1]: Started tftp-server.service - Tftp Server.
