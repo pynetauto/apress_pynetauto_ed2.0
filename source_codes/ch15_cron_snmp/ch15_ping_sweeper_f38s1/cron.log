@@ -1,0 +1,98 @@
+PING 192.168.127.3 (192.168.127.3) 56(84) bytes of data.
+64 bytes from 192.168.127.3: icmp_seq=1 ttl=255 time=15.9 ms
+64 bytes from 192.168.127.3: icmp_seq=2 ttl=255 time=20.3 ms
+64 bytes from 192.168.127.3: icmp_seq=3 ttl=255 time=20.2 ms
+
+--- 192.168.127.3 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 15.863/18.769/20.269/2.055 ms
+PING 192.168.127.4 (192.168.127.4) 56(84) bytes of data.
+64 bytes from 192.168.127.4: icmp_seq=1 ttl=255 time=22.0 ms
+64 bytes from 192.168.127.4: icmp_seq=2 ttl=255 time=32.8 ms
+64 bytes from 192.168.127.4: icmp_seq=3 ttl=255 time=19.1 ms
+
+--- 192.168.127.4 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 19.051/24.627/32.804/5.908 ms
+PING 192.168.127.101 (192.168.127.101) 56(84) bytes of data.
+64 bytes from 192.168.127.101: icmp_seq=1 ttl=255 time=21.4 ms
+64 bytes from 192.168.127.101: icmp_seq=2 ttl=255 time=8.59 ms
+64 bytes from 192.168.127.101: icmp_seq=3 ttl=255 time=29.4 ms
+
+--- 192.168.127.101 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2004ms
+rtt min/avg/max/mdev = 8.585/19.797/29.377/8.566 ms
+PING 192.168.127.102 (192.168.127.102) 56(84) bytes of data.
+64 bytes from 192.168.127.102: icmp_seq=1 ttl=255 time=55.0 ms
+64 bytes from 192.168.127.102: icmp_seq=2 ttl=255 time=28.3 ms
+64 bytes from 192.168.127.102: icmp_seq=3 ttl=255 time=27.1 ms
+
+--- 192.168.127.102 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+rtt min/avg/max/mdev = 27.076/36.783/54.996/12.887 ms
+PING 192.168.127.133 (192.168.127.133) 56(84) bytes of data.
+64 bytes from 192.168.127.133: icmp_seq=1 ttl=255 time=10.5 ms
+64 bytes from 192.168.127.133: icmp_seq=2 ttl=255 time=10.6 ms
+64 bytes from 192.168.127.133: icmp_seq=3 ttl=255 time=6.59 ms
+
+--- 192.168.127.133 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2004ms
+rtt min/avg/max/mdev = 6.590/9.218/10.561/1.858 ms
+--------------------------------------------------------------------------------
+2023-11-09 22:10:02.011644
+192.168.127.3 is reachable.
+192.168.127.4 is reachable.
+192.168.127.101 is reachable.
+192.168.127.102 is reachable.
+192.168.127.133 is reachable.
+--------------------------------------------------------------------------------
+All tasks completed.
+PING 192.168.127.3 (192.168.127.3) 56(84) bytes of data.
+64 bytes from 192.168.127.3: icmp_seq=1 ttl=255 time=25.1 ms
+64 bytes from 192.168.127.3: icmp_seq=2 ttl=255 time=37.2 ms
+64 bytes from 192.168.127.3: icmp_seq=3 ttl=255 time=13.4 ms
+
+--- 192.168.127.3 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2018ms
+rtt min/avg/max/mdev = 13.356/25.234/37.219/9.742 ms
+PING 192.168.127.4 (192.168.127.4) 56(84) bytes of data.
+64 bytes from 192.168.127.4: icmp_seq=1 ttl=255 time=18.4 ms
+64 bytes from 192.168.127.4: icmp_seq=2 ttl=255 time=30.4 ms
+64 bytes from 192.168.127.4: icmp_seq=3 ttl=255 time=24.9 ms
+
+--- 192.168.127.4 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2028ms
+rtt min/avg/max/mdev = 18.393/24.564/30.431/4.919 ms
+PING 192.168.127.101 (192.168.127.101) 56(84) bytes of data.
+64 bytes from 192.168.127.101: icmp_seq=1 ttl=255 time=11.9 ms
+64 bytes from 192.168.127.101: icmp_seq=2 ttl=255 time=10.6 ms
+64 bytes from 192.168.127.101: icmp_seq=3 ttl=255 time=13.4 ms
+
+--- 192.168.127.101 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2016ms
+rtt min/avg/max/mdev = 10.576/11.966/13.411/1.158 ms
+PING 192.168.127.102 (192.168.127.102) 56(84) bytes of data.
+64 bytes from 192.168.127.102: icmp_seq=1 ttl=255 time=37.2 ms
+64 bytes from 192.168.127.102: icmp_seq=2 ttl=255 time=27.7 ms
+64 bytes from 192.168.127.102: icmp_seq=3 ttl=255 time=22.8 ms
+
+--- 192.168.127.102 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2030ms
+rtt min/avg/max/mdev = 22.828/29.218/37.150/5.947 ms
+PING 192.168.127.133 (192.168.127.133) 56(84) bytes of data.
+64 bytes from 192.168.127.133: icmp_seq=1 ttl=255 time=10.6 ms
+64 bytes from 192.168.127.133: icmp_seq=2 ttl=255 time=11.2 ms
+64 bytes from 192.168.127.133: icmp_seq=3 ttl=255 time=2.12 ms
+
+--- 192.168.127.133 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2019ms
+rtt min/avg/max/mdev = 2.115/7.942/11.152/4.127 ms
+--------------------------------------------------------------------------------
+2023-11-09 22:15:01.212815
+192.168.127.3 is reachable.
+192.168.127.4 is reachable.
+192.168.127.101 is reachable.
+192.168.127.102 is reachable.
+192.168.127.133 is reachable.
+--------------------------------------------------------------------------------
+All tasks completed.
