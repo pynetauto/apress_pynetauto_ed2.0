@@ -1,0 +1,79 @@
+devices:
+  SW4:
+    connections:
+      cli:
+        ip: 192.168.127.244
+        protocol: telnet
+    credentials:
+      default:
+        password: '%ENC{w5PDosOUw5fDosKQwpbCmA==}'
+        username: jdoe
+      enable:
+        password: '%ENC{w5PDosOUw5fDosKQwpbCmA==}'
+    os: iosxe
+    type: iosxe
+  sw3:
+    connections:
+      cli:
+        ip: 192.168.127.153
+        protocol: telnet
+    credentials:
+      default:
+        password: '%ENC{w5PDosOUw5fDosKQwpbCmA==}'
+        username: jdoe
+      enable:
+        password: '%ENC{w5PDosOUw5fDosKQwpbCmA==}'
+    os: iosxe
+    type: iosxe
+  sw2:
+    connections:
+      cli:
+        ip: 192.168.127.102
+        protocol: ssh
+    credentials:
+      default:
+        password: '%ENC{w5PDosOUw5fDosKQwpbCmA==}'
+        username: jdoe
+      enable:
+        password: '%ENC{w5PDosOUw5fDosKQwpbCmA==}'
+    os: iosxe
+    type: iosxe
+  SW1:
+    connections:
+      cli:
+        ip: 192.168.127.101
+        protocol: ssh
+    credentials:
+      default:
+        password: '%ENC{w5PDosOUw5fDosKQwpbCmA==}'
+        username: jdoe
+      enable:
+        password: '%ENC{w5PDosOUw5fDosKQwpbCmA==}'
+    os: iosxe
+    type: iosxe
+  r3:
+    connections:
+      cli:
+        ip: 192.168.127.4
+        protocol: ssh
+    credentials:
+      default:
+        password: '%ENC{w5PDosOUw5fDosKQwpbCmA==}'
+        username: jdoe
+      enable:
+        password: '%ENC{w5PDosOUw5fDosKQwpbCmA==}'
+    os: iosxe
+    type: iosxe
+  R2:
+    connections:
+      cli:
+        ip: 192.168.127.3
+        protocol: ssh
+    credentials:
+      default:
+        password: '%ENC{w5PDosOUw5fDosKQwpbCmA==}'
+        username: jdoe
+      enable:
+        password: '%ENC{w5PDosOUw5fDosKQwpbCmA==}'
+    os: iosxe
+    type: iosxe

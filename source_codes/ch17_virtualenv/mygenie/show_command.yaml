@@ -1,0 +1,17 @@
+---
+- name: Running show commands on Cisco IOS
+  hosts: switches
+  gather_facts: false
+  connection: network_cli
+
+  tasks:
+    - name: Run multiple commands on Cisco IOS XE nodes
+      ios_command:
+        commands:
+          - show clock
+          - show version | include uptime
+
+      register: print_output
+
+    -  debug: var=print_output.stdout_lines
+...
