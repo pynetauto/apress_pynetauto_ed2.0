@@ -16,6 +16,7 @@ device1 = {
     'password': 'cisco123',
     'secret': 'cisco123',
     'global_delay_factor': 2  # Run netmiko commands twice slower
+    "read_timeout_override": 90,
 }
 device2 = {
     'device_type': 'cisco_xe',
@@ -24,6 +25,7 @@ device2 = {
     'password': 'cisco123',
     'secret': 'cisco123',
     'global_delay_factor': 2
+    "read_timeout_override": 90,
 }
 devices_list = [device1, device2]
 
@@ -37,7 +39,7 @@ def upload_file(device):
         # If new IOS is found on the router's flash, run this script
         if d_newios in locate_newios:
             # Cisco IOS/IOS XE verify command, run and assign variable result to the output
-            result = net_connect.send_command(f"verify /md5 flash:{d_newios} {newiosmd5}") 
+            result = net_connect.send_command(f"verify /md5 flash:{d_newios} {newiosmd5}", read_timeout=120) 
             print(f"Connecting to {ip}...") # Print the connected device host IP
             print(result)
             net_connect.disconnect()
