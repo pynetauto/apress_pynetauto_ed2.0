@@ -1,4 +1,0 @@
-devicename,device,devicetype,host,newios,newiosmd5
-c8kv01,RT,cisco_xe,192.168.127.111,c8000v-universalk9.17.06.05a.SPA.bin,13f0161a50210f2f21618fc59c5f5343
-c8kv02,RT,cisco_xe,192.168.127.222,c8000v-universalk9.17.06.05a.SPA.bin,13f0161a50210f2f21618fc59c5f5343
-
