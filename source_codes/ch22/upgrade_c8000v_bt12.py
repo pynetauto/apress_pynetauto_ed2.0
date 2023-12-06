@@ -463,13 +463,15 @@ t3 = time.mktime(time.localtime()) # Timer(t3)end of IOS uploading
 verify_md5(device_list_netmiko, device_list)
 run_change_boot_var(device_list_netmiko, device_list)
 time.sleep(3)
-t4 = time.mktime(time.localtime()) # Timer(t2) start for IOS uploading
+t4 = time.mktime(time.localtime()) # Timer(t4) start for IOS uploading
 reload_yes_no_in_parallel(device_list_netmiko, device_list)
+t5 = time.mktime(time.localtime()) # Timer(t5) end of reload and post check
+
 
 tt_ios_upload = t3 - t2
 print("Total Time for IOS upload: {0} seconds".format(tt_ios_upload)) # Time taken to upload IOS file
 
-tt_reload_to_compare = time.mktime(time.localtime()) - t4
+tt_reload_to_compare = t5 - t4
 print("Total time to reload and compare: {0} seconds".format(tt_reload_to_compare)) # Timer to reload and compare
 
 tt = time.mktime(time.localtime()) - t1
