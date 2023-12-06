@@ -11,8 +11,7 @@ from netmiko import NetMikoTimeoutException  # To catch netmiko timeout exceptio
 import threading # For multi-tasking using threads
 import difflib  # For analyzing two files and differences
 
-t1 = time.mktime(time.localtime()) # Timer(t1) start to measure script running time
-
+##########
 def get_secret(p2):
     global secret # declare secret as a global variable
     resp = input("Is secret same as password? (y/n) : ")
@@ -54,9 +53,7 @@ def get_credentials():
             pwd = None
     get_secret(p2) # Trigger get_secret function to run
     return uid, pwd, secret
-
-get_credentials() # Trigger get_Credential function to run
-
+##########
 def read_info(uid, pwd, secret):
     df = pd.read_csv(r'./devices_info.csv') # ensure the correct file location
     number_of_rows = len(df.index)
@@ -92,10 +89,7 @@ def read_info(uid, pwd, secret):
             'secret': secret,
             }
             device_list_netmiko.append(device)
-
-# Trigger read_info function to run
-read_info(uid, pwd, secret)
-
+##########
 def test_connectivity(device_list_netmiko):
     f1 = open('reachable_ips_ssh.txt', 'w+')
     f2 = open('reachable_ips_telnet.txt', 'w+')
@@ -133,10 +127,7 @@ def test_connectivity(device_list_netmiko):
     f1.close()
     f2.close()
     f3.close()
-
-# Trigger test_connectivity function to run
-test_connectivity(device_list_netmiko)
-
+##########
 def validate_md5(device_list):
     for x in device_list:
         print(x[3], x[0], x[1], x[2])
@@ -158,10 +149,7 @@ def validate_md5(device_list):
             print("Mismatched MD5 values. Exit")
             exit()
     return newiossize
-
-# Trigger validate_md5 function to run
-validate_md5(device_list)
-
+##########
 def check_flash(device_list_netmiko, newiossize):
     for device in device_list_netmiko:
         ip = str(device['host'])
@@ -179,64 +167,51 @@ def check_flash(device_list_netmiko, newiossize):
             exit()
         else:
             print(f"{ip} has enough space for new IOS.")
+##########
 
-# Trigger check_flash function to run
-check_flash(device_list_netmiko, newiossize)
+def upload_ios(device, device_info):
+    ip = device['host']
+    username = device['username']
+    newios = device_info[4]
+    source_newios = f'./new_ios/{newios}'
 
+    net_connect = ConnectHandler(**device)
+    net_connect.send_command("terminal length 0")
+    showrun = net_connect.send_command("show running-config")
+    check_priv15 = f'username {username} privilege 15'
+    aaa_authentication = "aaa authentication login default local enable"
+    aaa_authorization = "aaa authorization exec default local"
 
-# t2 = time.mktime(time.localtime()) # Timer(t2) start for IOS uploading
-# print("device_list_netmiko", device_list_netmiko)
-# print("device_list", device_list)
+    if check_priv15 in showrun and aaa_authentication in showrun and aaa_authorization in showrun:
+        net_connect.enable(cmd='enable 15')
+        net_connect.config_mode()
+        net_connect.send_command('ip scp server enable')
+        net_connect.exit_config_mode()
+        time.sleep(1)
+        print(f"New IOS uploading in progress to {ip}! Please wait...")
+        scp_conn = SCPConn(net_connect)
+        scp_conn.scp_transfer_file(source_newios, newios)
+        scp_conn.close()
+        time.sleep(1)
+        net_connect.config_mode()
+        net_connect.send_command('no ip scp server enable')
+        net_connect.exit_config_mode()
+        print(f"Upload to {ip} completed.")
+    else:
+        print(f"Failed to upload to {ip}. Insufficient privileges or authentication issues.")
 
-# def upload_ios(device, device_info):
-#     ip = device['host']
-#     username = device['username']
-#     newios = device_info[4]
-#     source_newios = f'./new_ios/{newios}'
+def ios_upload(device_list_netmiko, device_list):
+    threads = []
+    for device, device_info in zip(device_list_netmiko, device_list):
+        thread = threading.Thread(target=upload_ios, args=(device, device_info))
+        thread.start()
+        threads.append(thread)
 
-#     net_connect = ConnectHandler(**device)
-#     net_connect.send_command("terminal length 0")
-#     showrun = net_connect.send_command("show running-config")
-#     check_priv15 = f'username {username} privilege 15'
-#     aaa_authentication = "aaa authentication login default local enable"
-#     aaa_authorization = "aaa authorization exec default local"
+    for thread in threads:
+        thread.join()
 
-#     if check_priv15 in showrun and aaa_authentication in showrun and aaa_authorization in showrun:
-#         net_connect.enable(cmd='enable 15')
-#         net_connect.config_mode()
-#         net_connect.send_command('ip scp server enable')
-#         net_connect.exit_config_mode()
-#         time.sleep(1)
-#         print(f"New IOS uploading in progress to {ip}! Please wait...")
-#         scp_conn = SCPConn(net_connect)
-#         scp_conn.scp_transfer_file(source_newios, newios)
-#         scp_conn.close()
-#         time.sleep(1)
-#         net_connect.config_mode()
-#         net_connect.send_command('no ip scp server enable')
-#         net_connect.exit_config_mode()
-#         print(f"Upload to {ip} completed.")
-#     else:
-#         print(f"Failed to upload to {ip}. Insufficient privileges or authentication issues.")
-
-# def ios_upload(device_list_netmiko, device_list):
-#     threads = []
-#     for device, device_info in zip(device_list_netmiko, device_list):
-#         thread = threading.Thread(target=upload_ios, args=(device, device_info))
-#         thread.start()
-#         threads.append(thread)
-
-#     for thread in threads:
-#         thread.join()
-
-#     print("All file uploads completed.")
-
-# # Trigger ios_upload() application.
-# ios_upload(device_list_netmiko, device_list)
-
-# tt_ios_upload = time.mktime(time.localtime()) - t2
-# print("Total Time : {0} seconds".format(tt_ios_upload)) # Time taken to upload IOS file
-
+    print("All file uploads completed.")
+##########
 def verify_ios_md5(device, device_info):
     ip = device['host']
     newios = device_info[4]
@@ -280,9 +255,7 @@ def verify_md5(device_list_netmiko, device_list):
         thread = threading.Thread(target=verify_ios_md5, args=(device, device_info))
         thread.start()
         threads.append(thread)
-
-verify_md5(device_list_netmiko, device_list)
-
+##########
 def reload_device(device):
     try:
         net_connect = ConnectHandler(**device)
@@ -301,7 +274,6 @@ def reload_device(device):
 
 def post_check(device):
     try:
-#####################################################################
         ip = device['host']
         net_connect = ConnectHandler(**device)
         net_connect.enable(cmd='enable 15')
@@ -371,7 +343,7 @@ def post_check(device):
         difference_report.write(difference)
         difference_report.close()
         time.sleep(1)
-#####################################################################
+
     except Exception as e:
         print(f"Connection error with {device['host']}: {e}")
 
@@ -434,6 +406,7 @@ def run_show_and_capture(device_list_netmiko):
     for thread in threads:
         thread.join()
 
+#####################################################################
 def change_boot_var(device, device_info):
     ip = device['host']
     newios = device_info[4]
@@ -458,7 +431,9 @@ def run_change_boot_var(device_list_netmiko, device_list):
         thread = threading.Thread(target=change_boot_var, args=(device, device_info))
         thread.start()
         threads.append(thread)
+#####################################################################
 
+##########
 def reload_yes_no_in_parallel(device_list_netmiko, device_list):
     time.sleep(10)
     print("*"*79)
@@ -467,17 +442,35 @@ def reload_yes_no_in_parallel(device_list_netmiko, device_list):
     print("*"*79)
     resp = input("Would you like to reload your devices? (y/n): ").lower()
     if resp == 'y':
-        # Change the boot variable to new IOS version
-        run_change_boot_var(device_list_netmiko, device_list)
         # Run the router reload command
         reload_devices(device_list_netmiko)
     elif resp == 'n':
         print("You chose not to reload the devices.")
     else:
         print("Invalid input. Please enter 'y' or 'n'.")
+##########
 
-time.sleep(10)
+# RUN APPLICATIONS IN ORDER
+get_credentials()
+t1 = time.mktime(time.localtime()) # Timer(t1) start to measure script running time
+read_info(uid, pwd, secret)
+test_connectivity(device_list_netmiko)
+validate_md5(device_list)
+check_flash(device_list_netmiko, newiossize)
+t2 = time.mktime(time.localtime()) # Timer(t2) start for IOS uploading
+ios_upload(device_list_netmiko, device_list)
+t3 = time.mktime(time.localtime()) # Timer(t3)end of IOS uploading
+verify_md5(device_list_netmiko, device_list)
+run_change_boot_var(device_list_netmiko, device_list)
+time.sleep(3)
+t4 = time.mktime(time.localtime()) # Timer(t2) start for IOS uploading
 reload_yes_no_in_parallel(device_list_netmiko, device_list)
 
+tt_ios_upload = t3 - t2
+print("Total Time for IOS upload: {0} seconds".format(tt_ios_upload)) # Time taken to upload IOS file
+
+tt_reload_to_compare = time.mktime(time.localtime()) - t4
+print("Total time to reload and compare: {0} seconds".format(tt_reload_to_compare)) # Timer to reload and compare
+
 tt = time.mktime(time.localtime()) - t1
-print("Total time : {0} seconds".format(tt)) # Timer finish to show total time (tt)
+print("Total time to run all applications: {0} seconds".format(tt)) # Timer finish to show total time (tt)
