@@ -1,11 +1,9 @@
-import subprocess
 import os
+import subprocess
 import time
 
 # Record the start time
 start_time = time.time()
-
-#####################################################
 
 # Function to run a shell command and print its output
 def run_command(command):
@@ -23,25 +21,21 @@ def run_command(command):
         print(f"An error occurred: {e}")
         return None
 
-print("#1~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 1. Update the Linux server
+print("#1. Update the Linux server.")
 update_command = "sudo apt update"
 run_command(update_command)
 
-print("#2~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 2. Install PostgreSQL
+print("#2. Install PostgreSQL.")
 install_postgresql_command = "sudo apt install -y postgresql"
 run_command(install_postgresql_command)
 
-print("#4~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 4. Start and enable PostgreSQL service
+print("#3. Start and enable PostgreSQL service.")
 start_postgresql_command = "sudo systemctl start postgresql"
 enable_postgresql_command = "sudo systemctl enable postgresql"
 run_command(start_postgresql_command)
 run_command(enable_postgresql_command)
 
-print("#5~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 5. Create a database and user, and grant privileges
+print("#4. Create a database and user, and grant privileges.")
 create_db_user_command = '''
 sudo -u postgres psql -c "CREATE DATABASE netbox;"
 sudo -u postgres psql -c "CREATE USER netbox WITH PASSWORD 'P0stgr3SQLP@ss!';"
@@ -49,62 +43,50 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE netbox TO netbox;"
 '''
 run_command(create_db_user_command)
 
-print("#7~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 7. Install Redis
+print("#5. Install Redis.")
 install_redis_command = "sudo apt install -y redis-server"
 run_command(install_redis_command)
-
-# 7b. Start Redis service
+# 5a. Start Redis service
 start_redis_command = "sudo service redis-server start"
 run_command(start_redis_command)
-
-# 7c. Enable Redis service to start on boot
+# 5b. Enable Redis service to start on boot
 enable_redis_service_command = "sudo systemctl enable redis-server"
 run_command(enable_redis_service_command)
-
-# 7d. Check Redis version
+# 5c. Check Redis version
 check_redis_version_command = "redis-server -v"
 run_command(check_redis_version_command)
 
-print("#8~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 8. Install NetBox dependencies
+print("#6. Install NetBox dependencies.")
 install_dependencies_command = '''
 sudo apt install -y python3 python3-pip python3-venv python3-dev build-essential libxml2-dev libxslt1-dev libffi-dev libpq-dev libssl-dev zlib1g-dev
 '''
 run_command(install_dependencies_command)
 
-print("#9~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 9. Create the NetBox directory and clone the repository
+print("#7. Create the NetBox directory and clone the repository.")
 create_netbox_directory_command = "sudo mkdir -p /opt/netbox/"
 run_command(create_netbox_directory_command)
-
-# 9b. Change the working directory to '/opt/netbox'
+# 7a. Change the working directory to '/opt/netbox'
 os.chdir("/opt/netbox/")
-
-# 9c. Install Git
+# 7b. Install Git
 install_git_command = "sudo apt install -y git"
 run_command(install_git_command)
-
-# 9d. Clone the NetBox repository (latest version)
+# 7c. Clone the NetBox repository (latest version)
 clone_netbox_command = "sudo git clone -b master --depth 1 https://github.com/netbox-community/netbox.git ."
 run_command(clone_netbox_command)
-
-print("#10~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 10. Create NetBox system user and change the ownership of the media directory for any device images to be used.
+##########
+print("#8. Create NetBox system user and change the ownership of the media directory for any device images to be used.")
 create_netbox_user_command = "sudo adduser --system --group netbox"
 change_media_ownership_command = "sudo chown --recursive netbox /opt/netbox/netbox/media/"
 run_command(create_netbox_user_command)
 run_command(change_media_ownership_command)
-
-print("#11~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 11. Change directory, copy example configuration file, and then modify it.
+##########
+print("#9. Change directory, copy example configuration file, and then modify it.)
 os.chdir("/opt/netbox/netbox/netbox/")
 copy_config_file_command = "sudo cp configuration_example.py configuration.py"
 run_command(copy_config_file_command)
-
-print("#12~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 12a. Update configuration.py file with the SQL user and password.
-print("# 12. Update configuration.py file with the SQL user and password.")
+##########
+print("#10. Update configuration.py file with the SQL user and password.")
+print("# 10a. Update configuration.py file with the SQL user and password.")
 # Define the path to the configuration.py file
 config_file_path = '/opt/netbox/netbox/netbox/configuration.py'
 # Read the existing configuration.py file
@@ -129,8 +111,8 @@ for line in lines:
 with open(config_file_path, 'w') as config_file:
     config_file.writelines(updated_lines)
 
-# 12b. Use Python to generate a secret key and append it to the configuration.py file
-print("# 12b. Generating a secret key...")
+# Use Python to generate a secret key and append it to the configuration.py file
+print("# 10b. Generating a secret key...") 
 generate_secret_key_command = "python3 /opt/netbox/netbox/generate_secret_key.py"
 generated_secret_key = run_command(generate_secret_key_command)
 if generated_secret_key is not None:
@@ -140,28 +122,22 @@ if generated_secret_key is not None:
     # Replace with the actual generated secret key
     append_secret_key_command = f"sudo echo 'SECRET_KEY = \"{generated_secret_key}\"' >> /opt/netbox/netbox/netbox/configuration.py"
     run_command(append_secret_key_command)
-
-print("#13~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 13. Append 'napalm' to local_requirements.txt
+##########
+print("#11. Append 'napalm' to local_requirements.txt.")
 append_napalm_command = "sudo sh -c \"echo 'napalm' >> /opt/netbox/local_requirements.txt\""
 run_command(append_napalm_command)
-
-print("#14~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 14. Run the upgrade script
-print("# 14. Running the upgrade script...")
+##########
+print("# 12. Running the upgrade script...")
 run_upgrade_script_command = "sudo /opt/netbox/upgrade.sh"
 run_command(run_upgrade_script_command)
-
-print("#15~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 15. Activating the virtual environment
-print("# 15. Activating the virtual environment...")
+##########
+print("# 13. Activating the virtual environment...")
 activate_venv_command = "source /opt/netbox/venv/bin/activate"
 subprocess.run(activate_venv_command, shell=True, text=True)
 change_dir = "cd /opt/netbox/netbox"
 subprocess.run(change_dir, shell=True, text=True)
-
-print("#16~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 16. Define the command to create a superuser
+##########
+print("#14. Define the command to create a superuser.")
 createsuperuser_command = "python3 manage.py createsuperuser"
 
 # Define the responses
@@ -196,13 +172,11 @@ try:
         print(f"Error creating superuser: {stderr}")
 except Exception as e:
     print(f"An error occurred: {e}")
-
-print("#18~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 18. Define the path to the settings.py file
+##########
+print("#15. Define the path to the settings.py file.")
 settings_file_path = '/opt/netbox/netbox/netbox/settings.py'
-
-print("#19~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 19. Define the new ALLOWED_HOSTS line
+##########
+print("#16. Define the new ALLOWED_HOSTS line.")
 new_allowed_hosts_line = "ALLOWED_HOSTS = ['*']\n"
 
 try:
@@ -212,8 +186,7 @@ try:
 
     updated_lines = []
     found_allowed_hosts = False
-    print("#20~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    # 20. Iterate through the lines and update ALLOWED_HOSTS
+    print("#17. Iterate through the lines and update ALLOWED_HOSTS.")
     for line in lines:
         if line.strip().startswith('ALLOWED_HOSTS'):
             updated_lines.append(new_allowed_hosts_line)
@@ -224,8 +197,7 @@ try:
     # If ALLOWED_HOSTS was not found, append it to the end of the file
     if not found_allowed_hosts:
         updated_lines.append(new_allowed_hosts_line)
-    print("#21~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    # 21. Write the modified content back to settings.py
+    print("#18. Write the modified content back to settings.py.")
     with open(settings_file_path, 'w') as file:
         file.writelines(updated_lines)
 
@@ -233,8 +205,8 @@ try:
 except Exception as e:
     print(f"An error occurred: {e}")
 
-print("#22~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 22. Command to copy the gunicorn.py file
+##########
+print("#19. Command to copy the gunicorn.py file.")
 copy_gunicorn_command = "sudo cp /opt/netbox/contrib/gunicorn.py /opt/netbox/gunicorn.py"
 
 try:
@@ -246,8 +218,8 @@ except subprocess.CalledProcessError as e:
 except Exception as e:
     print(f"An error occurred: {e}")
 
-print("#23~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 23. Commands to copy .service files, reload systemd, start, and enable NetBox services
+##########
+print("#20. Commands to copy .service files, reload systemd, start, and enable NetBox services.")
 copy_service_files_command = "sudo cp -v /opt/netbox/contrib/*.service /etc/systemd/system/"
 reload_systemd_command = "sudo systemctl daemon-reload"
 start_netbox_command = "sudo systemctl start netbox netbox-rq"
@@ -274,9 +246,8 @@ except subprocess.CalledProcessError as e:
 except Exception as e:
     print(f"An error occurred: {e}")
 
-# ==============================================================
-print("#24~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 24. Create a local SSL certificate and define the openssl command with default values for prompts
+##########
+print("#21. Create a local SSL certificate and define the openssl command with default values for prompts.")
 openssl_command = (
     "sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 "
     "-keyout /etc/ssl/private/netbox.key "
@@ -319,9 +290,8 @@ try:
 except Exception as e:
     print(f"An error occurred: {e}")
 
-#==============================================================
-print("#25~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 25. Install Nginx
+##########
+print("#22. Install Nginx.")
 install_nginx_command = "sudo apt install -y nginx"
 
 try:
@@ -333,9 +303,8 @@ except subprocess.CalledProcessError as e:
 except Exception as e:
     print(f"An error occurred: {e}")
 
-#==============================================================
-print("#26~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 26. Create and configure the Nginx site file
+##########
+print("#23. Create and configure the Nginx site file.")
 nginx_config_content = '''
 server {
     listen [::]:443 ssl ipv6only=off;
@@ -375,10 +344,8 @@ with open(nginx_config_path, 'w') as nginx_config_file:
 
 # Print success message
 print("Nginx site configuration created successfully.")
-
-#==============================================================
-print("#27~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-# 27. Delete the Nginx default site and create a symlink to the new active file
+##########
+print("#24. Delete the Nginx default site and create a symlink to the new active file.")
 delete_default_nginx_site_command = "sudo rm /etc/nginx/sites-enabled/default"
 create_symlink_command = "sudo ln -s /etc/nginx/sites-available/netbox /etc/nginx/sites-enabled/netbox"
 
@@ -388,19 +355,14 @@ run_command(create_symlink_command)
 
 # Print success messages
 print("Default Nginx site deleted and symlink created successfully.")
-#==============================================================
-
-# 28. Restart the Nginx service
-print("#28~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+##########
+print("#25. Restart the Nginx service.")
 restart_nginx_command = "sudo systemctl restart nginx"
-
-# Restart the Nginx service
 run_command(restart_nginx_command)
 
 # Print a success message
 print("Nginx service restarted successfully.")
-
-#####################################################
+##########
 # Record the end time
 end_time = time.time()
 

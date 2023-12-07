@@ -1,0 +1,2548 @@
+jdoe@u22s1:~$ su -
+Password:
+root@u22s1:~# mkdir ch23 && cd ch23
+root@u22s1:~/ch23# nano install_netbox.py
+root@u22s1:~/ch23# cat install_netbox.py
+import os
+import subprocess
+import time
+
+# Record the start time
+start_time = time.time()
+
+# Function to run a shell command and print its output
+def run_command(command):
+    try:
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+        output = result.stdout.strip()  # Get the command output
+        print(output)
+        print(f"Command executed successfully: {command}")
+        return output  # Return the output
+    except subprocess.CalledProcessError as e:
+        print(f"Error executing command: {command}")
+        print(f"Error details: {e.stderr}")
+        return None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
+print("#1. Update the Linux server.")
+update_command = "sudo apt update"
+run_command(update_command)
+
+print("#2. Install PostgreSQL.")
+install_postgresql_command = "sudo apt install -y postgresql"
+run_command(install_postgresql_command)
+
+print("#3. Start and enable PostgreSQL service.")
+start_postgresql_command = "sudo systemctl start postgresql"
+enable_postgresql_command = "sudo systemctl enable postgresql"
+run_command(start_postgresql_command)
+run_command(enable_postgresql_command)
+
+print("#4. Create a database and user, and grant privileges.")
+create_db_user_command = '''
+sudo -u postgres psql -c "CREATE DATABASE netbox;"
+sudo -u postgres psql -c "CREATE USER netbox WITH PASSWORD 'P0stgr3SQLP@ss!';"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE netbox TO netbox;"
+'''
+run_command(create_db_user_command)
+
+print("#5. Install Redis.")
+install_redis_command = "sudo apt install -y redis-server"
+run_command(install_redis_command)
+# 5a. Start Redis service
+start_redis_command = "sudo service redis-server start"
+run_command(start_redis_command)
+# 5b. Enable Redis service to start on boot
+enable_redis_service_command = "sudo systemctl enable redis-server"
+run_command(enable_redis_service_command)
+# 5c. Check Redis version
+check_redis_version_command = "redis-server -v"
+run_command(check_redis_version_command)
+
+print("#6. Install NetBox dependencies.")
+install_dependencies_command = '''
+sudo apt install -y python3 python3-pip python3-venv python3-dev build-essential libxml2-dev libxslt1-dev libffi-dev libpq-dev libssl-dev zlib1g-dev
+'''
+run_command(install_dependencies_command)
+
+print("#7. Create the NetBox directory and clone the repository.")
+create_netbox_directory_command = "sudo mkdir -p /opt/netbox/"
+run_command(create_netbox_directory_command)
+# 7a. Change the working directory to '/opt/netbox'
+os.chdir("/opt/netbox/")
+# 7b. Install Git
+install_git_command = "sudo apt install -y git"
+run_command(install_git_command)
+# 7c. Clone the NetBox repository (latest version)
+clone_netbox_command = "sudo git clone -b master --depth 1 https://github.com/netbox-community/netbox.git ."
+run_command(clone_netbox_command)
+##########
+print("#8. Create NetBox system user and change the ownership of the media directory for any device images to be used.")
+create_netbox_user_command = "sudo adduser --system --group netbox"
+change_media_ownership_command = "sudo chown --recursive netbox /opt/netbox/netbox/media/"
+run_command(create_netbox_user_command)
+run_command(change_media_ownership_command)
+##########
+print("#9. Change directory, copy example configuration file, and then modify it.")
+os.chdir("/opt/netbox/netbox/netbox/")
+copy_config_file_command = "sudo cp configuration_example.py configuration.py"
+run_command(copy_config_file_command)
+##########
+print("#10. Update configuration.py file with the SQL user and password.")
+print("# 10a. Update configuration.py file with the SQL user and password.")
+# Define the path to the configuration.py file
+config_file_path = '/opt/netbox/netbox/netbox/configuration.py'
+# Read the existing configuration.py file
+with open(config_file_path, 'r') as config_file:
+    lines = config_file.readlines()
+# Update 'USER' and 'PASSWORD' values (only the first instance)
+updated_lines = []
+user_updated = False
+password_updated = False
+
+for line in lines:
+    if not user_updated and line.strip().startswith("'USER':"):
+        updated_lines.append(f"    'USER': 'netbox',\n")
+        user_updated = True
+    elif not password_updated and line.strip().startswith("'PASSWORD':"):
+        updated_lines.append(f"    'PASSWORD': 'P0stgr3SQLP@ss!',\n")
+        password_updated = True
+    else:
+        updated_lines.append(line)
+
+# Write the updated lines back to the configuration.py file
+with open(config_file_path, 'w') as config_file:
+    config_file.writelines(updated_lines)
+
+# Use Python to generate a secret key and append it to the configuration.py file
+print("# 10b. Generating a secret key...")
+generate_secret_key_command = "python3 /opt/netbox/netbox/generate_secret_key.py"
+generated_secret_key = run_command(generate_secret_key_command)
+if generated_secret_key is not None:
+    print("# Generated Secret Key:", generated_secret_key)
+    # Append the "SECRET_KEY = generated_secret_key" to the end of configuration.py file
+    print("# Appending the SECRET_KEY to the configuration.py file...")
+    # Replace with the actual generated secret key
+    append_secret_key_command = f"sudo echo 'SECRET_KEY = \"{generated_secret_key}\"' >> /opt/netbox/netbox/netbox/configuration.py"
+    run_command(append_secret_key_command)
+##########
+print("#11. Append 'napalm' to local_requirements.txt.")
+append_napalm_command = "sudo sh -c \"echo 'napalm' >> /opt/netbox/local_requirements.txt\""
+run_command(append_napalm_command)
+##########
+print("# 12. Running the upgrade script...")
+run_upgrade_script_command = "sudo /opt/netbox/upgrade.sh"
+run_command(run_upgrade_script_command)
+##########
+print("# 13. Activating the virtual environment...")
+activate_venv_command = "source /opt/netbox/venv/bin/activate"
+subprocess.run(activate_venv_command, shell=True, text=True)
+change_dir = "cd /opt/netbox/netbox"
+subprocess.run(change_dir, shell=True, text=True)
+##########
+print("#14. Define the command to create a superuser.")
+createsuperuser_command = "python3 manage.py createsuperuser"
+
+# Define the responses
+responses = {
+    "Username (leave blank to use 'root'): ": "admin\n",
+    "Email address: ": "admin@pynetauto.com\n",
+    "Password: ": "admin\n",
+    "Password (again): ": "admin\n",
+}
+
+try:
+    # Run the command and provide responses interactively
+    process = subprocess.Popen(
+        createsuperuser_command,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        shell=True,
+    )
+
+    for prompt, response in responses.items():
+        response_str = f"{response}"
+        process.stdin.write(response_str)
+        process.stdin.flush()
+
+    stdout, stderr = process.communicate()
+
+    if process.returncode == 0:
+        print("Superuser created successfully.")
+    else:
+        print(f"Error creating superuser: {stderr}")
+except Exception as e:
+    print(f"An error occurred: {e}")
+##########
+print("#15. Define the path to the settings.py file.")
+settings_file_path = '/opt/netbox/netbox/netbox/settings.py'
+##########
+print("#16. Define the new ALLOWED_HOSTS line.")
+new_allowed_hosts_line = "ALLOWED_HOSTS = ['*']\n"
+
+try:
+    # Read the existing content of settings.py
+    with open(settings_file_path, 'r') as file:
+        lines = file.readlines()
+
+    updated_lines = []
+    found_allowed_hosts = False
+    print("#17. Iterate through the lines and update ALLOWED_HOSTS.")
+    for line in lines:
+        if line.strip().startswith('ALLOWED_HOSTS'):
+            updated_lines.append(new_allowed_hosts_line)
+            found_allowed_hosts = True
+        else:
+            updated_lines.append(line)
+
+    # If ALLOWED_HOSTS was not found, append it to the end of the file
+    if not found_allowed_hosts:
+        updated_lines.append(new_allowed_hosts_line)
+    print("#18. Write the modified content back to settings.py.")
+    with open(settings_file_path, 'w') as file:
+        file.writelines(updated_lines)
+
+    print("ALLOWED_HOSTS updated successfully.")
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+##########
+print("#19. Command to copy the gunicorn.py file.")
+copy_gunicorn_command = "sudo cp /opt/netbox/contrib/gunicorn.py /opt/netbox/gunicorn.py"
+
+try:
+    # Copy the gunicorn.py file
+    subprocess.run(copy_gunicorn_command, shell=True, text=True, check=True)
+    print("gunicorn.py file copied successfully.")
+except subprocess.CalledProcessError as e:
+    print(f"Error copying gunicorn.py file: {e.stderr}")
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+##########
+print("#20. Commands to copy .service files, reload systemd, start, and enable NetBox services.")
+copy_service_files_command = "sudo cp -v /opt/netbox/contrib/*.service /etc/systemd/system/"
+reload_systemd_command = "sudo systemctl daemon-reload"
+start_netbox_command = "sudo systemctl start netbox netbox-rq"
+enable_netbox_command = "sudo systemctl enable netbox netbox-rq"
+
+try:
+    # Copy .service files
+    subprocess.run(copy_service_files_command, shell=True, text=True, check=True)
+    print("Service files copied successfully.")
+
+    # Reload systemd
+    subprocess.run(reload_systemd_command, shell=True, text=True, check=True)
+    print("Systemd reloaded successfully.")
+
+    # Start NetBox services
+    subprocess.run(start_netbox_command, shell=True, text=True, check=True)
+    print("NetBox services started successfully.")
+
+    # Enable NetBox services to start on boot
+    subprocess.run(enable_netbox_command, shell=True, text=True, check=True)
+    print("NetBox services enabled successfully.")
+except subprocess.CalledProcessError as e:
+    print(f"Error: {e.stderr}")
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+##########
+print("#21. Create a local SSL certificate and define the openssl command with default values for prompts.")
+openssl_command = (
+    "sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 "
+    "-keyout /etc/ssl/private/netbox.key "
+    "-out /etc/ssl/certs/netbox.crt"
+)
+
+# Create a dictionary of responses to provide default values for prompts
+responses = {
+    "Country Name (2 letter code) [AU]:": "\n",
+    "State or Province Name (full name) [Some-State]:": "\n",
+    "Locality Name (eg, city) []:": "\n",
+    "Organization Name (eg, company) [Internet Widgits Pty Ltd]:": "\n",
+    "Organizational Unit Name (eg, section) []:": "\n",
+    "Common Name (e.g. server FQDN or YOUR name) []:": "\n",
+    "Email Address []:": "\n",
+}
+
+try:
+    # Run the openssl command and provide responses interactively
+    process = subprocess.Popen(
+        openssl_command,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        shell=True,
+    )
+
+    for prompt, response in responses.items():
+        response_str = f"{response}"
+        process.stdin.write(response_str)
+        process.stdin.flush()
+
+    stdout, stderr = process.communicate()
+
+    if process.returncode == 0:
+        print("Local SSL certificate created successfully.")
+    else:
+        print(f"Error creating SSL certificate: {stderr}")
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+##########
+print("#22. Install Nginx.")
+install_nginx_command = "sudo apt install -y nginx"
+
+try:
+    # Run the command to install Nginx
+    subprocess.run(install_nginx_command, shell=True, text=True, check=True)
+    print("Nginx installed successfully.")
+except subprocess.CalledProcessError as e:
+    print(f"Error installing Nginx: {e.stderr}")
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+##########
+print("#23. Create and configure the Nginx site file.")
+nginx_config_content = '''
+server {
+    listen [::]:443 ssl ipv6only=off;
+
+    # CHANGE THIS TO YOUR SERVER'S NAME
+    server_name 192.168.127.20;
+
+    ssl_certificate /etc/ssl/certs/netbox.crt;
+    ssl_certificate_key /etc/ssl/private/netbox.key;
+
+    client_max_body_size 25m;
+
+    location /static/ {
+        alias /opt/netbox/netbox/static/;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8001;
+        proxy_set_header X-Forwarded-Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+server {
+    # Redirect HTTP traffic to HTTPS
+    listen [::]:80 ipv6only=off;
+    server_name _;
+    return 301 https://$host$request_uri;
+}
+'''
+
+# Create and write the Nginx site configuration file
+nginx_config_path = '/etc/nginx/sites-available/netbox'
+with open(nginx_config_path, 'w') as nginx_config_file:
+    nginx_config_file.write(nginx_config_content)
+
+# Print success message
+print("Nginx site configuration created successfully.")
+##########
+print("#24. Delete the Nginx default site and create a symlink to the new active file.")
+delete_default_nginx_site_command = "sudo rm /etc/nginx/sites-enabled/default"
+create_symlink_command = "sudo ln -s /etc/nginx/sites-available/netbox /etc/nginx/sites-enabled/netbox"
+
+# Delete the default site and create the symlink
+run_command(delete_default_nginx_site_command)
+run_command(create_symlink_command)
+
+# Print success messages
+print("Default Nginx site deleted and symlink created successfully.")
+##########
+print("#25. Restart the Nginx service.")
+restart_nginx_command = "sudo systemctl restart nginx"
+run_command(restart_nginx_command)
+
+# Print a success message
+print("Nginx service restarted successfully.")
+##########
+# Record the end time
+end_time = time.time()
+
+# Calculate the elapsed time
+elapsed_time = end_time - start_time
+
+# Print the elapsed time
+print(f"Script execution time: {elapsed_time} seconds")
+######################################################################################################################
+
+######################################################################################################################
+root@u22s1:~/ch23# python3 install_netbox.py
+#1. Update the Linux server.
+Hit:1 http://au.archive.ubuntu.com/ubuntu jammy InRelease
+Hit:2 http://au.archive.ubuntu.com/ubuntu jammy-updates InRelease
+Hit:3 http://au.archive.ubuntu.com/ubuntu jammy-backports InRelease
+Hit:4 http://au.archive.ubuntu.com/ubuntu jammy-security InRelease
+Reading package lists...
+Building dependency tree...
+Reading state information...
+133 packages can be upgraded. Run 'apt list --upgradable' to see them.
+Command executed successfully: sudo apt update
+#2. Install PostgreSQL.
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Waiting for cache lock: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 3482 (unattended-upgr)...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following packages were automatically installed and are no longer required:
+  acpi-support acpid aisleriot apt-config-icons-hidpi apturl apturl-common
+  baobab bluez-cups branding-ubuntu cheese dc deja-dup dmz-cursor-theme
+  duplicity eog file-roller fonts-beng fonts-beng-extra fonts-deva
+  fonts-deva-extra fonts-gargi fonts-gubbi fonts-gujr fonts-gujr-extra
+  fonts-guru fonts-guru-extra fonts-indic fonts-kacst fonts-kacst-one
+  fonts-kalapi fonts-khmeros-core fonts-knda fonts-lao fonts-lklug-sinhala
+  fonts-lohit-beng-assamese fonts-lohit-beng-bengali fonts-lohit-deva
+  fonts-lohit-gujr fonts-lohit-guru fonts-lohit-knda fonts-lohit-mlym
+  fonts-lohit-orya fonts-lohit-taml fonts-lohit-taml-classical
+  fonts-lohit-telu fonts-mlym fonts-nakula fonts-navilu fonts-noto-cjk
+  fonts-noto-color-emoji fonts-opensymbol fonts-orya fonts-orya-extra
+  fonts-pagul fonts-sahadeva fonts-samyak-deva fonts-samyak-gujr
+  fonts-samyak-mlym fonts-samyak-taml fonts-sarai fonts-sil-abyssinica
+  fonts-sil-padauk fonts-smc fonts-smc-anjalioldlipi fonts-smc-chilanka
+  fonts-smc-dyuthi fonts-smc-gayathri fonts-smc-karumbi fonts-smc-keraleeyam
+  fonts-smc-manjari fonts-smc-meera fonts-smc-rachana
+  fonts-smc-raghumalayalamsans fonts-smc-suruma fonts-smc-uroob fonts-taml
+  fonts-telu fonts-telu-extra fonts-teluguvijayam fonts-thai-tlwg
+  fonts-tibetan-machine fonts-tlwg-garuda fonts-tlwg-garuda-ttf
+  fonts-tlwg-kinnari fonts-tlwg-kinnari-ttf fonts-tlwg-laksaman
+  fonts-tlwg-laksaman-ttf fonts-tlwg-loma fonts-tlwg-loma-ttf fonts-tlwg-mono
+  fonts-tlwg-mono-ttf fonts-tlwg-norasi fonts-tlwg-norasi-ttf
+  fonts-tlwg-purisa fonts-tlwg-purisa-ttf fonts-tlwg-sawasdee
+  fonts-tlwg-sawasdee-ttf fonts-tlwg-typewriter fonts-tlwg-typewriter-ttf
+  fonts-tlwg-typist fonts-tlwg-typist-ttf fonts-tlwg-typo fonts-tlwg-typo-ttf
+  fonts-tlwg-umpush fonts-tlwg-umpush-ttf fonts-tlwg-waree
+  fonts-tlwg-waree-ttf fonts-yrsa-rasa fwupd fwupd-signed gamemode
+  gamemode-daemon genisoimage gir1.2-gmenu-3.0 gir1.2-gst-plugins-base-1.0
+  gir1.2-gudev-1.0 gir1.2-rb-3.0 gir1.2-totem-1.0 gir1.2-totemplparser-1.0
+  gir1.2-udisks-2.0 gjs gnome-accessibility-themes gnome-bluetooth
+  gnome-calculator gnome-calendar gnome-characters gnome-disk-utility
+  gnome-font-viewer gnome-initial-setup gnome-logs gnome-mahjongg gnome-mines
+  gnome-power-manager gnome-session-canberra
+  gnome-shell-extension-appindicator gnome-shell-extension-desktop-icons-ng
+  gnome-shell-extension-ubuntu-dock gnome-sudoku gnome-system-monitor
+  gnome-themes-extra gnome-themes-extra-data gnome-todo gnome-todo-common
+  gnome-video-effects grilo-plugins-0.3-base gsettings-ubuntu-schemas
+  gstreamer1.0-gtk3 gstreamer1.0-packagekit gstreamer1.0-plugins-base-apps
+  gtk2-engines-murrine gtk2-engines-pixbuf guile-2.2-libs gvfs-fuse ibus-table
+  inputattach kerneloops libabw-0.1-1 libatkmm-1.6-1v5 libavahi-ui-gtk3-0
+  libboost-filesystem1.74.0 libboost-iostreams1.74.0 libboost-locale1.74.0
+  libboost-thread1.74.0 libcairomm-1.0-1v5 libcdr-0.1-1 libclucene-contribs1v5
+  libclucene-core1v5 libcolamd2 libcue2 libcupsimage2 libdazzle-1.0-0
+  libdazzle-common libdmapsharing-3.0-2 libe-book-0.1-1 libeot0
+  libepubgen-0.1-1 libetonyek-0.1-1 libevent-2.1-7 libexempi8 libexiv2-27
+  libexttextcat-2.0-0 libexttextcat-data libfreehand-0.1-1 libfwupd2
+  libfwupdplugin5 libgamemode0 libgamemodeauto0 libgcab-1.0-0 libgexiv2-2
+  libglibmm-2.4-1v5 libglu1-mesa libgnome-games-support-1-3
+  libgnome-games-support-common libgnome-menu-3-0 libgnome-todo libgom-1.0-0
+  libgpgmepp6 libgpod-common libgpod4 libgrilo-0.3-0 libgsf-1-114
+  libgsf-1-common libgtkmm-3.0-1v5 libjcat1 liblangtag-common liblangtag1
+  liblirc-client0 liblua5.3-0 libmessaging-menu0 libmhash2 libminiupnpc17
+  libmspub-0.1-1 libmwaw-0.3-3 libmythes-1.2-0 libnatpmp1 libodfgen-0.1-1
+  libopengl0 liborcus-0.17-0 liborcus-parser-0.17-0 libpagemaker-0.0-0
+  libpangomm-1.4-1v5 libproxy1-plugin-gsettings
+  libproxy1-plugin-networkmanager libqqwing2v5 libraptor2-0 librasqal3
+  libraw20 librdf0 libreoffice-base-core libreoffice-calc libreoffice-common
+  libreoffice-core libreoffice-draw libreoffice-gnome libreoffice-gtk3
+  libreoffice-impress libreoffice-math libreoffice-pdfimport
+  libreoffice-style-breeze libreoffice-style-colibre
+  libreoffice-style-elementary libreoffice-style-yaru libreoffice-writer
+  librevenge-0.0-0 librhythmbox-core10 librsync2 libsigc++-2.0-0v5
+  libsmbios-c2 libsuitesparseconfig5 libsysmetrics1 libtotem-plparser-common
+  libtotem-plparser18 libtotem0 libtracker-sparql-3.0-0 libu2f-udev
+  libuno-cppu3 libuno-cppuhelpergcc3-3 libuno-purpenvhelpergcc3-3 libuno-sal3
+  libuno-salhelpergcc3-3 libvisio-0.1-1 libvncclient1 libwmf-0.2-7
+  libwmf-0.2-7-gtk libwmf0.2-7-gtk libwpd-0.10-10 libwpg-0.3-3 libwps-0.4-4
+  libxmlsec1 libxmlsec1-nss libyajl2 lp-solve media-player-info memtest86+
+  mousetweaks mscompress nautilus nautilus-data nautilus-share
+  network-manager-config-connectivity-ubuntu pcmciautils
+  policykit-desktop-privileges printer-driver-brlaser printer-driver-c2esp
+  printer-driver-foo2zjs printer-driver-foo2zjs-common printer-driver-m2300w
+  printer-driver-min12xxw printer-driver-pnm2ppa printer-driver-ptouch
+  printer-driver-pxljr printer-driver-sag-gdi printer-driver-splix
+  python3-bcrypt python3-fasteners python3-future python3-lockfile
+  python3-mako python3-monotonic python3-paramiko python3-uno remmina
+  remmina-common remmina-plugin-rdp remmina-plugin-secret remmina-plugin-vnc
+  rfkill rhythmbox rhythmbox-data rhythmbox-plugin-alternative-toolbar
+  rhythmbox-plugins sbsigntool seahorse secureboot-db shotwell shotwell-common
+  simple-scan spice-vdagent systemd-oomd thunderbird thunderbird-gnome-support
+  totem totem-common totem-plugins tracker tracker-extract tracker-miner-fs
+  transmission-common transmission-gtk ubuntu-report ubuntu-settings
+  uno-libs-private ure usb-creator-common usb-creator-gtk x11-apps
+  x11-session-utils xbitmaps xcursor-themes xdg-user-dirs-gtk xinit xorg
+  yaru-theme-gtk yaru-theme-icon yaru-theme-sound
+Use 'sudo apt autoremove' to remove them.
+The following additional packages will be installed:
+  libcommon-sense-perl libjson-perl libjson-xs-perl libllvm14 libpq5
+  libtypes-serialiser-perl postgresql-14 postgresql-client-14
+  postgresql-client-common postgresql-common sysstat
+Suggested packages:
+  postgresql-doc postgresql-doc-14 isag
+The following NEW packages will be installed:
+  libcommon-sense-perl libjson-perl libjson-xs-perl libllvm14 libpq5
+  libtypes-serialiser-perl postgresql postgresql-14 postgresql-client-14
+  postgresql-client-common postgresql-common sysstat
+0 upgraded, 12 newly installed, 0 to remove and 133 not upgraded.
+Need to get 42.4 MB of archives.
+After this operation, 161 MB of additional disk space will be used.
+Get:1 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libcommon-sense-perl amd64 3.75-2build1 [21.1 kB]
+Get:2 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libjson-perl all 4.04000-1 [81.8 kB]
+Get:3 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libtypes-serialiser-perl all 1.01-1 [11.6 kB]
+Get:4 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libjson-xs-perl amd64 4.030-1build3 [87.2 kB]
+Get:5 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libllvm14 amd64 1:14.0.0-1ubuntu1.1 [24.0 MB]
+Get:6 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libpq5 amd64 14.10-0ubuntu0.22.04.1 [143 kB]
+Get:7 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 postgresql-client-common all 238 [29.6 kB]
+Get:8 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 postgresql-client-14 amd64 14.10-0ubuntu0.22.04.1 [1223 kB]
+Get:9 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 postgresql-common all 238 [169 kB]
+Get:10 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 postgresql-14 amd64 14.10-0ubuntu0.22.04.1 [16.1 MB]
+Get:11 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 postgresql all 14+238 [3288 B]
+Get:12 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 sysstat amd64 12.5.2-2ubuntu0.2 [487 kB]
+Preconfiguring packages ...
+Fetched 42.4 MB in 6s (6562 kB/s)
+Selecting previously unselected package libcommon-sense-perl:amd64.
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 196077 files and directories currently installed.)
+Preparing to unpack .../00-libcommon-sense-perl_3.75-2build1_amd64.deb ...
+Unpacking libcommon-sense-perl:amd64 (3.75-2build1) ...
+Selecting previously unselected package libjson-perl.
+Preparing to unpack .../01-libjson-perl_4.04000-1_all.deb ...
+Unpacking libjson-perl (4.04000-1) ...
+Selecting previously unselected package libtypes-serialiser-perl.
+Preparing to unpack .../02-libtypes-serialiser-perl_1.01-1_all.deb ...
+Unpacking libtypes-serialiser-perl (1.01-1) ...
+Selecting previously unselected package libjson-xs-perl.
+Preparing to unpack .../03-libjson-xs-perl_4.030-1build3_amd64.deb ...
+Unpacking libjson-xs-perl (4.030-1build3) ...
+Selecting previously unselected package libllvm14:amd64.
+Preparing to unpack .../04-libllvm14_1%3a14.0.0-1ubuntu1.1_amd64.deb ...
+Unpacking libllvm14:amd64 (1:14.0.0-1ubuntu1.1) ...
+Selecting previously unselected package libpq5:amd64.
+Preparing to unpack .../05-libpq5_14.10-0ubuntu0.22.04.1_amd64.deb ...
+Unpacking libpq5:amd64 (14.10-0ubuntu0.22.04.1) ...
+Selecting previously unselected package postgresql-client-common.
+Preparing to unpack .../06-postgresql-client-common_238_all.deb ...
+Unpacking postgresql-client-common (238) ...
+Selecting previously unselected package postgresql-client-14.
+Preparing to unpack .../07-postgresql-client-14_14.10-0ubuntu0.22.04.1_amd64.deb ...
+Unpacking postgresql-client-14 (14.10-0ubuntu0.22.04.1) ...
+Selecting previously unselected package postgresql-common.
+Preparing to unpack .../08-postgresql-common_238_all.deb ...
+Adding 'diversion of /usr/bin/pg_config to /usr/bin/pg_config.libpq-dev by postgresql-common'
+Unpacking postgresql-common (238) ...
+Selecting previously unselected package postgresql-14.
+Preparing to unpack .../09-postgresql-14_14.10-0ubuntu0.22.04.1_amd64.deb ...
+Unpacking postgresql-14 (14.10-0ubuntu0.22.04.1) ...
+Selecting previously unselected package postgresql.
+Preparing to unpack .../10-postgresql_14+238_all.deb ...
+Unpacking postgresql (14+238) ...
+Selecting previously unselected package sysstat.
+Preparing to unpack .../11-sysstat_12.5.2-2ubuntu0.2_amd64.deb ...
+Unpacking sysstat (12.5.2-2ubuntu0.2) ...
+Setting up postgresql-client-common (238) ...
+Setting up libpq5:amd64 (14.10-0ubuntu0.22.04.1) ...
+Setting up libcommon-sense-perl:amd64 (3.75-2build1) ...
+Setting up postgresql-client-14 (14.10-0ubuntu0.22.04.1) ...
+update-alternatives: using /usr/share/postgresql/14/man/man1/psql.1.gz to provide /usr/share/man/man1/psql.1.gz (psql.1.gz) in auto mode
+Setting up libllvm14:amd64 (1:14.0.0-1ubuntu1.1) ...
+Setting up libtypes-serialiser-perl (1.01-1) ...
+Setting up libjson-perl (4.04000-1) ...
+Setting up sysstat (12.5.2-2ubuntu0.2) ...
+
+Creating config file /etc/default/sysstat with new version
+update-alternatives: using /usr/bin/sar.sysstat to provide /usr/bin/sar (sar) in auto mode
+Created symlink /etc/systemd/system/sysstat.service.wants/sysstat-collect.timer → /lib/systemd/system/sysstat-collect.timer.
+Created symlink /etc/systemd/system/sysstat.service.wants/sysstat-summary.timer → /lib/systemd/system/sysstat-summary.timer.
+Created symlink /etc/systemd/system/multi-user.target.wants/sysstat.service → /lib/systemd/system/sysstat.service.
+Setting up libjson-xs-perl (4.030-1build3) ...
+Setting up postgresql-common (238) ...
+Adding user postgres to group ssl-cert
+
+Creating config file /etc/postgresql-common/createcluster.conf with new version
+Building PostgreSQL dictionaries from installed myspell/hunspell packages...
+  en_us
+Removing obsolete dictionary files:
+Created symlink /etc/systemd/system/multi-user.target.wants/postgresql.service → /lib/systemd/system/postgresql.service.
+Setting up postgresql-14 (14.10-0ubuntu0.22.04.1) ...
+Creating new PostgreSQL cluster 14/main ...
+/usr/lib/postgresql/14/bin/initdb -D /var/lib/postgresql/14/main --auth-local peer --auth-host scram-sha-256 --no-instructions
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "C.UTF-8".
+The default database encoding has accordingly been set to "UTF8".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+fixing permissions on existing directory /var/lib/postgresql/14/main ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default max_connections ... 100
+selecting default shared_buffers ... 128MB
+selecting default time zone ... Australia/Sydney
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+update-alternatives: using /usr/share/postgresql/14/man/man1/postmaster.1.gz to provide /usr/share/man/man1/postmaster.1.gz (postmaster.1.gz) in auto mode
+Setting up postgresql (14+238) ...
+Processing triggers for man-db (2.10.2-1) ...
+Processing triggers for libc-bin (2.35-0ubuntu3.3) ...
+Command executed successfully: sudo apt install -y postgresql
+#3. Start and enable PostgreSQL service.
+
+Command executed successfully: sudo systemctl start postgresql
+
+Command executed successfully: sudo systemctl enable postgresql
+#4. Create a database and user, and grant privileges.
+CREATE DATABASE
+CREATE ROLE
+GRANT
+Command executed successfully:
+sudo -u postgres psql -c "CREATE DATABASE netbox;"
+sudo -u postgres psql -c "CREATE USER netbox WITH PASSWORD 'P0stgr3SQLP@ss!';"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE netbox TO netbox;"
+
+#5. Install Redis.
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following packages were automatically installed and are no longer required:
+  acpi-support acpid aisleriot apt-config-icons-hidpi apturl apturl-common
+  baobab bluez-cups branding-ubuntu cheese dc deja-dup dmz-cursor-theme
+  duplicity eog file-roller fonts-beng fonts-beng-extra fonts-deva
+  fonts-deva-extra fonts-gargi fonts-gubbi fonts-gujr fonts-gujr-extra
+  fonts-guru fonts-guru-extra fonts-indic fonts-kacst fonts-kacst-one
+  fonts-kalapi fonts-khmeros-core fonts-knda fonts-lao fonts-lklug-sinhala
+  fonts-lohit-beng-assamese fonts-lohit-beng-bengali fonts-lohit-deva
+  fonts-lohit-gujr fonts-lohit-guru fonts-lohit-knda fonts-lohit-mlym
+  fonts-lohit-orya fonts-lohit-taml fonts-lohit-taml-classical
+  fonts-lohit-telu fonts-mlym fonts-nakula fonts-navilu fonts-noto-cjk
+  fonts-noto-color-emoji fonts-opensymbol fonts-orya fonts-orya-extra
+  fonts-pagul fonts-sahadeva fonts-samyak-deva fonts-samyak-gujr
+  fonts-samyak-mlym fonts-samyak-taml fonts-sarai fonts-sil-abyssinica
+  fonts-sil-padauk fonts-smc fonts-smc-anjalioldlipi fonts-smc-chilanka
+  fonts-smc-dyuthi fonts-smc-gayathri fonts-smc-karumbi fonts-smc-keraleeyam
+  fonts-smc-manjari fonts-smc-meera fonts-smc-rachana
+  fonts-smc-raghumalayalamsans fonts-smc-suruma fonts-smc-uroob fonts-taml
+  fonts-telu fonts-telu-extra fonts-teluguvijayam fonts-thai-tlwg
+  fonts-tibetan-machine fonts-tlwg-garuda fonts-tlwg-garuda-ttf
+  fonts-tlwg-kinnari fonts-tlwg-kinnari-ttf fonts-tlwg-laksaman
+  fonts-tlwg-laksaman-ttf fonts-tlwg-loma fonts-tlwg-loma-ttf fonts-tlwg-mono
+  fonts-tlwg-mono-ttf fonts-tlwg-norasi fonts-tlwg-norasi-ttf
+  fonts-tlwg-purisa fonts-tlwg-purisa-ttf fonts-tlwg-sawasdee
+  fonts-tlwg-sawasdee-ttf fonts-tlwg-typewriter fonts-tlwg-typewriter-ttf
+  fonts-tlwg-typist fonts-tlwg-typist-ttf fonts-tlwg-typo fonts-tlwg-typo-ttf
+  fonts-tlwg-umpush fonts-tlwg-umpush-ttf fonts-tlwg-waree
+  fonts-tlwg-waree-ttf fonts-yrsa-rasa fwupd fwupd-signed gamemode
+  gamemode-daemon genisoimage gir1.2-gmenu-3.0 gir1.2-gst-plugins-base-1.0
+  gir1.2-gudev-1.0 gir1.2-rb-3.0 gir1.2-totem-1.0 gir1.2-totemplparser-1.0
+  gir1.2-udisks-2.0 gjs gnome-accessibility-themes gnome-bluetooth
+  gnome-calculator gnome-calendar gnome-characters gnome-disk-utility
+  gnome-font-viewer gnome-initial-setup gnome-logs gnome-mahjongg gnome-mines
+  gnome-power-manager gnome-session-canberra
+  gnome-shell-extension-appindicator gnome-shell-extension-desktop-icons-ng
+  gnome-shell-extension-ubuntu-dock gnome-sudoku gnome-system-monitor
+  gnome-themes-extra gnome-themes-extra-data gnome-todo gnome-todo-common
+  gnome-video-effects grilo-plugins-0.3-base gsettings-ubuntu-schemas
+  gstreamer1.0-gtk3 gstreamer1.0-packagekit gstreamer1.0-plugins-base-apps
+  gtk2-engines-murrine gtk2-engines-pixbuf guile-2.2-libs gvfs-fuse ibus-table
+  inputattach kerneloops libabw-0.1-1 libatkmm-1.6-1v5 libavahi-ui-gtk3-0
+  libboost-filesystem1.74.0 libboost-iostreams1.74.0 libboost-locale1.74.0
+  libboost-thread1.74.0 libcairomm-1.0-1v5 libcdr-0.1-1 libclucene-contribs1v5
+  libclucene-core1v5 libcolamd2 libcue2 libcupsimage2 libdazzle-1.0-0
+  libdazzle-common libdmapsharing-3.0-2 libe-book-0.1-1 libeot0
+  libepubgen-0.1-1 libetonyek-0.1-1 libevent-2.1-7 libexempi8 libexiv2-27
+  libexttextcat-2.0-0 libexttextcat-data libfreehand-0.1-1 libfwupd2
+  libfwupdplugin5 libgamemode0 libgamemodeauto0 libgcab-1.0-0 libgexiv2-2
+  libglibmm-2.4-1v5 libglu1-mesa libgnome-games-support-1-3
+  libgnome-games-support-common libgnome-menu-3-0 libgnome-todo libgom-1.0-0
+  libgpgmepp6 libgpod-common libgpod4 libgrilo-0.3-0 libgsf-1-114
+  libgsf-1-common libgtkmm-3.0-1v5 libjcat1 liblangtag-common liblangtag1
+  liblirc-client0 liblua5.3-0 libmessaging-menu0 libmhash2 libminiupnpc17
+  libmspub-0.1-1 libmwaw-0.3-3 libmythes-1.2-0 libnatpmp1 libodfgen-0.1-1
+  libopengl0 liborcus-0.17-0 liborcus-parser-0.17-0 libpagemaker-0.0-0
+  libpangomm-1.4-1v5 libproxy1-plugin-gsettings
+  libproxy1-plugin-networkmanager libqqwing2v5 libraptor2-0 librasqal3
+  libraw20 librdf0 libreoffice-base-core libreoffice-calc libreoffice-common
+  libreoffice-core libreoffice-draw libreoffice-gnome libreoffice-gtk3
+  libreoffice-impress libreoffice-math libreoffice-pdfimport
+  libreoffice-style-breeze libreoffice-style-colibre
+  libreoffice-style-elementary libreoffice-style-yaru libreoffice-writer
+  librevenge-0.0-0 librhythmbox-core10 librsync2 libsigc++-2.0-0v5
+  libsmbios-c2 libsuitesparseconfig5 libsysmetrics1 libtotem-plparser-common
+  libtotem-plparser18 libtotem0 libtracker-sparql-3.0-0 libu2f-udev
+  libuno-cppu3 libuno-cppuhelpergcc3-3 libuno-purpenvhelpergcc3-3 libuno-sal3
+  libuno-salhelpergcc3-3 libvisio-0.1-1 libvncclient1 libwmf-0.2-7
+  libwmf-0.2-7-gtk libwmf0.2-7-gtk libwpd-0.10-10 libwpg-0.3-3 libwps-0.4-4
+  libxmlsec1 libxmlsec1-nss libyajl2 lp-solve media-player-info memtest86+
+  mousetweaks mscompress nautilus nautilus-data nautilus-share
+  network-manager-config-connectivity-ubuntu pcmciautils
+  policykit-desktop-privileges printer-driver-brlaser printer-driver-c2esp
+  printer-driver-foo2zjs printer-driver-foo2zjs-common printer-driver-m2300w
+  printer-driver-min12xxw printer-driver-pnm2ppa printer-driver-ptouch
+  printer-driver-pxljr printer-driver-sag-gdi printer-driver-splix
+  python3-bcrypt python3-fasteners python3-future python3-lockfile
+  python3-mako python3-monotonic python3-paramiko python3-uno remmina
+  remmina-common remmina-plugin-rdp remmina-plugin-secret remmina-plugin-vnc
+  rfkill rhythmbox rhythmbox-data rhythmbox-plugin-alternative-toolbar
+  rhythmbox-plugins sbsigntool seahorse secureboot-db shotwell shotwell-common
+  simple-scan spice-vdagent systemd-oomd thunderbird thunderbird-gnome-support
+  totem totem-common totem-plugins tracker tracker-extract tracker-miner-fs
+  transmission-common transmission-gtk ubuntu-report ubuntu-settings
+  uno-libs-private ure usb-creator-common usb-creator-gtk x11-apps
+  x11-session-utils xbitmaps xcursor-themes xdg-user-dirs-gtk xinit xorg
+  yaru-theme-gtk yaru-theme-icon yaru-theme-sound
+Use 'sudo apt autoremove' to remove them.
+The following additional packages will be installed:
+  libjemalloc2 liblua5.1-0 liblzf1 lua-bitop lua-cjson redis-tools
+Suggested packages:
+  ruby-redis
+The following NEW packages will be installed:
+  libjemalloc2 liblua5.1-0 liblzf1 lua-bitop lua-cjson redis-server
+  redis-tools
+0 upgraded, 7 newly installed, 0 to remove and 133 not upgraded.
+Need to get 1273 kB of archives.
+After this operation, 5725 kB of additional disk space will be used.
+Get:1 http://au.archive.ubuntu.com/ubuntu jammy/universe amd64 libjemalloc2 amd64 5.2.1-4ubuntu1 [240 kB]
+Get:2 http://au.archive.ubuntu.com/ubuntu jammy/universe amd64 liblua5.1-0 amd64 5.1.5-8.1build4 [99.9 kB]
+Get:3 http://au.archive.ubuntu.com/ubuntu jammy/universe amd64 liblzf1 amd64 3.6-3 [7444 B]
+Get:4 http://au.archive.ubuntu.com/ubuntu jammy/universe amd64 lua-bitop amd64 1.0.2-5 [6680 B]
+Get:5 http://au.archive.ubuntu.com/ubuntu jammy/universe amd64 lua-cjson amd64 2.1.0+dfsg-2.1 [17.4 kB]
+Get:6 http://au.archive.ubuntu.com/ubuntu jammy/universe amd64 redis-tools amd64 5:6.0.16-1ubuntu1 [856 kB]
+Get:7 http://au.archive.ubuntu.com/ubuntu jammy/universe amd64 redis-server amd64 5:6.0.16-1ubuntu1 [45.9 kB]
+Fetched 1273 kB in 0s (3677 kB/s)
+Selecting previously unselected package libjemalloc2:amd64.
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 198015 files and directories currently installed.)
+Preparing to unpack .../0-libjemalloc2_5.2.1-4ubuntu1_amd64.deb ...
+Unpacking libjemalloc2:amd64 (5.2.1-4ubuntu1) ...
+Selecting previously unselected package liblua5.1-0:amd64.
+Preparing to unpack .../1-liblua5.1-0_5.1.5-8.1build4_amd64.deb ...
+Unpacking liblua5.1-0:amd64 (5.1.5-8.1build4) ...
+Selecting previously unselected package liblzf1:amd64.
+Preparing to unpack .../2-liblzf1_3.6-3_amd64.deb ...
+Unpacking liblzf1:amd64 (3.6-3) ...
+Selecting previously unselected package lua-bitop:amd64.
+Preparing to unpack .../3-lua-bitop_1.0.2-5_amd64.deb ...
+Unpacking lua-bitop:amd64 (1.0.2-5) ...
+Selecting previously unselected package lua-cjson:amd64.
+Preparing to unpack .../4-lua-cjson_2.1.0+dfsg-2.1_amd64.deb ...
+Unpacking lua-cjson:amd64 (2.1.0+dfsg-2.1) ...
+Selecting previously unselected package redis-tools.
+Preparing to unpack .../5-redis-tools_5%3a6.0.16-1ubuntu1_amd64.deb ...
+Unpacking redis-tools (5:6.0.16-1ubuntu1) ...
+Selecting previously unselected package redis-server.
+Preparing to unpack .../6-redis-server_5%3a6.0.16-1ubuntu1_amd64.deb ...
+Unpacking redis-server (5:6.0.16-1ubuntu1) ...
+Setting up libjemalloc2:amd64 (5.2.1-4ubuntu1) ...
+Setting up lua-cjson:amd64 (2.1.0+dfsg-2.1) ...
+Setting up liblzf1:amd64 (3.6-3) ...
+Setting up lua-bitop:amd64 (1.0.2-5) ...
+Setting up liblua5.1-0:amd64 (5.1.5-8.1build4) ...
+Setting up redis-tools (5:6.0.16-1ubuntu1) ...
+Setting up redis-server (5:6.0.16-1ubuntu1) ...
+Created symlink /etc/systemd/system/redis.service → /lib/systemd/system/redis-server.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/redis-server.service → /lib/systemd/system/redis-server.service.
+Processing triggers for man-db (2.10.2-1) ...
+Processing triggers for libc-bin (2.35-0ubuntu3.3) ...
+Command executed successfully: sudo apt install -y redis-server
+
+Command executed successfully: sudo service redis-server start
+
+Command executed successfully: sudo systemctl enable redis-server
+Redis server v=6.0.16 sha=00000000:0 malloc=jemalloc-5.2.1 bits=64 build=a3fdef44459b3ad6
+Command executed successfully: redis-server -v
+#6. Install NetBox dependencies.
+Reading package lists...
+Building dependency tree...
+Reading state information...
+python3 is already the newest version (3.10.6-1~22.04).
+python3 set to manually installed.
+The following packages were automatically installed and are no longer required:
+  acpi-support acpid aisleriot apt-config-icons-hidpi apturl apturl-common
+  baobab bluez-cups branding-ubuntu cheese dc deja-dup dmz-cursor-theme
+  duplicity eog file-roller fonts-beng fonts-beng-extra fonts-deva
+  fonts-deva-extra fonts-gargi fonts-gubbi fonts-gujr fonts-gujr-extra
+  fonts-guru fonts-guru-extra fonts-indic fonts-kacst fonts-kacst-one
+  fonts-kalapi fonts-khmeros-core fonts-knda fonts-lao fonts-lklug-sinhala
+  fonts-lohit-beng-assamese fonts-lohit-beng-bengali fonts-lohit-deva
+  fonts-lohit-gujr fonts-lohit-guru fonts-lohit-knda fonts-lohit-mlym
+  fonts-lohit-orya fonts-lohit-taml fonts-lohit-taml-classical
+  fonts-lohit-telu fonts-mlym fonts-nakula fonts-navilu fonts-noto-cjk
+  fonts-noto-color-emoji fonts-opensymbol fonts-orya fonts-orya-extra
+  fonts-pagul fonts-sahadeva fonts-samyak-deva fonts-samyak-gujr
+  fonts-samyak-mlym fonts-samyak-taml fonts-sarai fonts-sil-abyssinica
+  fonts-sil-padauk fonts-smc fonts-smc-anjalioldlipi fonts-smc-chilanka
+  fonts-smc-dyuthi fonts-smc-gayathri fonts-smc-karumbi fonts-smc-keraleeyam
+  fonts-smc-manjari fonts-smc-meera fonts-smc-rachana
+  fonts-smc-raghumalayalamsans fonts-smc-suruma fonts-smc-uroob fonts-taml
+  fonts-telu fonts-telu-extra fonts-teluguvijayam fonts-thai-tlwg
+  fonts-tibetan-machine fonts-tlwg-garuda fonts-tlwg-garuda-ttf
+  fonts-tlwg-kinnari fonts-tlwg-kinnari-ttf fonts-tlwg-laksaman
+  fonts-tlwg-laksaman-ttf fonts-tlwg-loma fonts-tlwg-loma-ttf fonts-tlwg-mono
+  fonts-tlwg-mono-ttf fonts-tlwg-norasi fonts-tlwg-norasi-ttf
+  fonts-tlwg-purisa fonts-tlwg-purisa-ttf fonts-tlwg-sawasdee
+  fonts-tlwg-sawasdee-ttf fonts-tlwg-typewriter fonts-tlwg-typewriter-ttf
+  fonts-tlwg-typist fonts-tlwg-typist-ttf fonts-tlwg-typo fonts-tlwg-typo-ttf
+  fonts-tlwg-umpush fonts-tlwg-umpush-ttf fonts-tlwg-waree
+  fonts-tlwg-waree-ttf fonts-yrsa-rasa fwupd fwupd-signed gamemode
+  gamemode-daemon genisoimage gir1.2-gmenu-3.0 gir1.2-gst-plugins-base-1.0
+  gir1.2-gudev-1.0 gir1.2-rb-3.0 gir1.2-totem-1.0 gir1.2-totemplparser-1.0
+  gir1.2-udisks-2.0 gjs gnome-accessibility-themes gnome-bluetooth
+  gnome-calculator gnome-calendar gnome-characters gnome-disk-utility
+  gnome-font-viewer gnome-initial-setup gnome-logs gnome-mahjongg gnome-mines
+  gnome-power-manager gnome-session-canberra
+  gnome-shell-extension-appindicator gnome-shell-extension-desktop-icons-ng
+  gnome-shell-extension-ubuntu-dock gnome-sudoku gnome-system-monitor
+  gnome-themes-extra gnome-themes-extra-data gnome-todo gnome-todo-common
+  gnome-video-effects grilo-plugins-0.3-base gsettings-ubuntu-schemas
+  gstreamer1.0-gtk3 gstreamer1.0-packagekit gstreamer1.0-plugins-base-apps
+  gtk2-engines-murrine gtk2-engines-pixbuf guile-2.2-libs gvfs-fuse ibus-table
+  inputattach kerneloops libabw-0.1-1 libatkmm-1.6-1v5 libavahi-ui-gtk3-0
+  libboost-filesystem1.74.0 libboost-iostreams1.74.0 libboost-locale1.74.0
+  libboost-thread1.74.0 libcairomm-1.0-1v5 libcdr-0.1-1 libclucene-contribs1v5
+  libclucene-core1v5 libcolamd2 libcue2 libcupsimage2 libdazzle-1.0-0
+  libdazzle-common libdmapsharing-3.0-2 libe-book-0.1-1 libeot0
+  libepubgen-0.1-1 libetonyek-0.1-1 libevent-2.1-7 libexempi8 libexiv2-27
+  libexttextcat-2.0-0 libexttextcat-data libfreehand-0.1-1 libfwupd2
+  libfwupdplugin5 libgamemode0 libgamemodeauto0 libgcab-1.0-0 libgexiv2-2
+  libglibmm-2.4-1v5 libglu1-mesa libgnome-games-support-1-3
+  libgnome-games-support-common libgnome-menu-3-0 libgnome-todo libgom-1.0-0
+  libgpgmepp6 libgpod-common libgpod4 libgrilo-0.3-0 libgsf-1-114
+  libgsf-1-common libgtkmm-3.0-1v5 libjcat1 liblangtag-common liblangtag1
+  liblirc-client0 liblua5.3-0 libmessaging-menu0 libmhash2 libminiupnpc17
+  libmspub-0.1-1 libmwaw-0.3-3 libmythes-1.2-0 libnatpmp1 libodfgen-0.1-1
+  libopengl0 liborcus-0.17-0 liborcus-parser-0.17-0 libpagemaker-0.0-0
+  libpangomm-1.4-1v5 libproxy1-plugin-gsettings
+  libproxy1-plugin-networkmanager libqqwing2v5 libraptor2-0 librasqal3
+  libraw20 librdf0 libreoffice-base-core libreoffice-calc libreoffice-common
+  libreoffice-core libreoffice-draw libreoffice-gnome libreoffice-gtk3
+  libreoffice-impress libreoffice-math libreoffice-pdfimport
+  libreoffice-style-breeze libreoffice-style-colibre
+  libreoffice-style-elementary libreoffice-style-yaru libreoffice-writer
+  librevenge-0.0-0 librhythmbox-core10 librsync2 libsigc++-2.0-0v5
+  libsmbios-c2 libsuitesparseconfig5 libsysmetrics1 libtotem-plparser-common
+  libtotem-plparser18 libtotem0 libtracker-sparql-3.0-0 libu2f-udev
+  libuno-cppu3 libuno-cppuhelpergcc3-3 libuno-purpenvhelpergcc3-3 libuno-sal3
+  libuno-salhelpergcc3-3 libvisio-0.1-1 libvncclient1 libwmf-0.2-7
+  libwmf-0.2-7-gtk libwmf0.2-7-gtk libwpd-0.10-10 libwpg-0.3-3 libwps-0.4-4
+  libxmlsec1 libxmlsec1-nss libyajl2 lp-solve media-player-info memtest86+
+  mousetweaks mscompress nautilus nautilus-data nautilus-share
+  network-manager-config-connectivity-ubuntu pcmciautils
+  policykit-desktop-privileges printer-driver-brlaser printer-driver-c2esp
+  printer-driver-foo2zjs printer-driver-foo2zjs-common printer-driver-m2300w
+  printer-driver-min12xxw printer-driver-pnm2ppa printer-driver-ptouch
+  printer-driver-pxljr printer-driver-sag-gdi printer-driver-splix
+  python3-bcrypt python3-fasteners python3-future python3-lockfile
+  python3-mako python3-monotonic python3-paramiko python3-uno remmina
+  remmina-common remmina-plugin-rdp remmina-plugin-secret remmina-plugin-vnc
+  rfkill rhythmbox rhythmbox-data rhythmbox-plugin-alternative-toolbar
+  rhythmbox-plugins sbsigntool seahorse secureboot-db shotwell shotwell-common
+  simple-scan spice-vdagent systemd-oomd thunderbird thunderbird-gnome-support
+  totem totem-common totem-plugins tracker tracker-extract tracker-miner-fs
+  transmission-common transmission-gtk ubuntu-report ubuntu-settings
+  uno-libs-private ure usb-creator-common usb-creator-gtk x11-apps
+  x11-session-utils xbitmaps xcursor-themes xdg-user-dirs-gtk xinit xorg
+  yaru-theme-gtk yaru-theme-icon yaru-theme-sound
+Use 'sudo apt autoremove' to remove them.
+The following additional packages will be installed:
+  dpkg-dev fakeroot g++ g++-11 gcc gcc-11 icu-devtools javascript-common
+  libalgorithm-diff-perl libalgorithm-diff-xs-perl libalgorithm-merge-perl
+  libasan6 libc-dev-bin libc-devtools libc6 libc6-dbg libc6-dev libcc1-0
+  libcrypt-dev libdpkg-perl libexpat1-dev libfakeroot libfile-fcntllock-perl
+  libgcc-11-dev libicu-dev libitm1 libjs-jquery libjs-sphinxdoc
+  libjs-underscore liblsan0 libnsl-dev libpython3-dev libpython3.10
+  libpython3.10-dev libpython3.10-minimal libpython3.10-stdlib libquadmath0
+  libssl3 libstdc++-11-dev libtirpc-dev libtsan0 libubsan1 linux-libc-dev
+  lto-disabled-list make manpages-dev python3-pip-whl python3-setuptools-whl
+  python3-wheel python3.10 python3.10-dev python3.10-minimal python3.10-venv
+  rpcsvc-proto
+Suggested packages:
+  debian-keyring g++-multilib g++-11-multilib gcc-11-doc gcc-multilib autoconf
+  automake libtool flex bison gcc-doc gcc-11-multilib gcc-11-locales apache2
+  | lighttpd | httpd glibc-doc git bzr icu-doc postgresql-doc-14 libssl-doc
+  libstdc++-11-doc pkg-config make-doc python3.10-doc binfmt-support
+Recommended packages:
+  libnss-nis libnss-nisplus
+The following NEW packages will be installed:
+  build-essential dpkg-dev fakeroot g++ g++-11 gcc gcc-11 icu-devtools
+  javascript-common libalgorithm-diff-perl libalgorithm-diff-xs-perl
+  libalgorithm-merge-perl libasan6 libc-dev-bin libc-devtools libc6-dev
+  libcc1-0 libcrypt-dev libdpkg-perl libexpat1-dev libfakeroot libffi-dev
+  libfile-fcntllock-perl libgcc-11-dev libicu-dev libitm1 libjs-jquery
+  libjs-sphinxdoc libjs-underscore liblsan0 libnsl-dev libpq-dev
+  libpython3-dev libpython3.10-dev libquadmath0 libssl-dev libstdc++-11-dev
+  libtirpc-dev libtsan0 libubsan1 libxml2-dev libxslt1-dev linux-libc-dev
+  lto-disabled-list make manpages-dev python3-dev python3-pip python3-pip-whl
+  python3-setuptools-whl python3-venv python3-wheel python3.10-dev
+  python3.10-venv rpcsvc-proto zlib1g-dev
+The following packages will be upgraded:
+  libc6 libc6-dbg libpython3.10 libpython3.10-minimal libpython3.10-stdlib
+  libssl3 python3.10 python3.10-minimal
+8 upgraded, 56 newly installed, 0 to remove and 125 not upgraded.
+Need to get 76.2 MB/103 MB of archives.
+After this operation, 273 MB of additional disk space will be used.
+Get:1 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libc-dev-bin amd64 2.35-0ubuntu3.4 [20.3 kB]
+Get:2 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 linux-libc-dev amd64 5.15.0-89.99 [1338 kB]
+Get:3 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libcrypt-dev amd64 1:4.4.27-1 [112 kB]
+Get:4 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 rpcsvc-proto amd64 1.4.2-0ubuntu6 [68.5 kB]
+Get:5 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libtirpc-dev amd64 1.3.2-2ubuntu0.1 [192 kB]
+Get:6 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libnsl-dev amd64 1.3.0-2build2 [71.3 kB]
+Get:7 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libc6-dev amd64 2.35-0ubuntu3.4 [2100 kB]
+Get:8 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libcc1-0 amd64 12.3.0-1ubuntu1~22.04 [48.3 kB]
+Get:9 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libitm1 amd64 12.3.0-1ubuntu1~22.04 [30.2 kB]
+Get:10 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libasan6 amd64 11.4.0-1ubuntu1~22.04 [2282 kB]
+Get:11 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 liblsan0 amd64 12.3.0-1ubuntu1~22.04 [1069 kB]
+Get:12 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libtsan0 amd64 11.4.0-1ubuntu1~22.04 [2260 kB]
+Get:13 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libubsan1 amd64 12.3.0-1ubuntu1~22.04 [976 kB]
+Get:14 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libquadmath0 amd64 12.3.0-1ubuntu1~22.04 [154 kB]
+Get:15 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libgcc-11-dev amd64 11.4.0-1ubuntu1~22.04 [2517 kB]
+Get:16 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 gcc-11 amd64 11.4.0-1ubuntu1~22.04 [20.1 MB]
+Get:17 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 gcc amd64 4:11.2.0-1ubuntu1 [5112 B]
+Get:18 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libstdc++-11-dev amd64 11.4.0-1ubuntu1~22.04 [2101 kB]
+Get:19 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 g++-11 amd64 11.4.0-1ubuntu1~22.04 [11.4 MB]
+Get:20 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 g++ amd64 4:11.2.0-1ubuntu1 [1412 B]
+Get:21 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 make amd64 4.3-4.1build1 [180 kB]
+Get:22 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libdpkg-perl all 1.21.1ubuntu2.2 [237 kB]
+Get:23 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 lto-disabled-list all 24 [12.5 kB]
+Get:24 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 dpkg-dev all 1.21.1ubuntu2.2 [922 kB]
+Get:25 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 build-essential amd64 12.9ubuntu3 [4744 B]
+Get:26 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libfakeroot amd64 1.28-1ubuntu1 [31.5 kB]
+Get:27 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 fakeroot amd64 1.28-1ubuntu1 [60.4 kB]
+Get:28 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 icu-devtools amd64 70.1-2 [197 kB]
+Get:29 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 javascript-common all 11+nmu1 [5936 B]
+Get:30 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libalgorithm-diff-perl all 1.201-1 [41.8 kB]
+Get:31 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libalgorithm-diff-xs-perl amd64 0.04-6build3 [11.9 kB]
+Get:32 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libalgorithm-merge-perl all 0.08-3 [12.0 kB]
+Get:33 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libc-devtools amd64 2.35-0ubuntu3.4 [28.9 kB]
+Get:34 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libexpat1-dev amd64 2.4.7-1ubuntu0.2 [147 kB]
+Get:35 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libfile-fcntllock-perl amd64 0.22-3build7 [33.9 kB]
+Get:36 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libicu-dev amd64 70.1-2 [11.6 MB]
+Get:37 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libjs-jquery all 3.6.0+dfsg+~3.5.13-1 [321 kB]
+Get:38 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libjs-underscore all 1.13.2~dfsg-2 [118 kB]
+Get:39 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libjs-sphinxdoc all 4.3.2-1 [139 kB]
+Get:40 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libssl-dev amd64 3.0.2-0ubuntu1.12 [2373 kB]
+Get:41 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libpq-dev amd64 14.10-0ubuntu0.22.04.1 [147 kB]
+Get:42 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 zlib1g-dev amd64 1:1.2.11.dfsg-2ubuntu9.2 [164 kB]
+Get:43 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libpython3.10-dev amd64 3.10.12-1~22.04.3 [4762 kB]
+Get:44 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libpython3-dev amd64 3.10.6-1~22.04 [7166 B]
+Get:45 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libxml2-dev amd64 2.9.13+dfsg-1ubuntu0.3 [804 kB]
+Get:46 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libxslt1-dev amd64 1.1.34-4ubuntu0.22.04.1 [219 kB]
+Get:47 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 manpages-dev all 5.10-1ubuntu1 [2309 kB]
+Get:48 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 python3.10-dev amd64 3.10.12-1~22.04.3 [507 kB]
+Get:49 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 python3-dev amd64 3.10.6-1~22.04 [26.0 kB]
+Get:50 http://au.archive.ubuntu.com/ubuntu jammy-updates/universe amd64 python3-wheel all 0.37.1-2ubuntu0.22.04.1 [32.0 kB]
+Get:51 http://au.archive.ubuntu.com/ubuntu jammy-updates/universe amd64 python3-pip all 22.0.2+dfsg-1ubuntu0.4 [1305 kB]
+Get:52 http://au.archive.ubuntu.com/ubuntu jammy-updates/universe amd64 python3-pip-whl all 22.0.2+dfsg-1ubuntu0.4 [1680 kB]
+Get:53 http://au.archive.ubuntu.com/ubuntu jammy-updates/universe amd64 python3-setuptools-whl all 59.6.0-1.2ubuntu0.22.04.1 [788 kB]
+Get:54 http://au.archive.ubuntu.com/ubuntu jammy-updates/universe amd64 python3.10-venv amd64 3.10.12-1~22.04.3 [5716 B]
+Get:55 http://au.archive.ubuntu.com/ubuntu jammy-updates/universe amd64 python3-venv amd64 3.10.6-1~22.04 [1038 B]
+Get:56 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 libffi-dev amd64 3.4.2-4 [63.7 kB]
+Preconfiguring packages ...
+Fetched 76.2 MB in 11s (6661 kB/s)
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 198097 files and directories currently installed.)
+Preparing to unpack .../libc6-dbg_2.35-0ubuntu3.4_amd64.deb ...
+Unpacking libc6-dbg:amd64 (2.35-0ubuntu3.4) over (2.35-0ubuntu3.3) ...
+Preparing to unpack .../libc6_2.35-0ubuntu3.4_amd64.deb ...
+Unpacking libc6:amd64 (2.35-0ubuntu3.4) over (2.35-0ubuntu3.3) ...
+Setting up libc6:amd64 (2.35-0ubuntu3.4) ...
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 198098 files and directories currently installed.)
+Preparing to unpack .../libpython3.10_3.10.12-1~22.04.3_amd64.deb ...
+Unpacking libpython3.10:amd64 (3.10.12-1~22.04.3) over (3.10.12-1~22.04.2) ...
+Preparing to unpack .../libssl3_3.0.2-0ubuntu1.12_amd64.deb ...
+Unpacking libssl3:amd64 (3.0.2-0ubuntu1.12) over (3.0.2-0ubuntu1.10) ...
+Setting up libssl3:amd64 (3.0.2-0ubuntu1.12) ...
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 198098 files and directories currently installed.)
+Preparing to unpack .../00-python3.10_3.10.12-1~22.04.3_amd64.deb ...
+Unpacking python3.10 (3.10.12-1~22.04.3) over (3.10.12-1~22.04.2) ...
+Preparing to unpack .../01-libpython3.10-stdlib_3.10.12-1~22.04.3_amd64.deb ...
+Unpacking libpython3.10-stdlib:amd64 (3.10.12-1~22.04.3) over (3.10.12-1~22.04.2) ...
+Preparing to unpack .../02-python3.10-minimal_3.10.12-1~22.04.3_amd64.deb ...
+Unpacking python3.10-minimal (3.10.12-1~22.04.3) over (3.10.12-1~22.04.2) ...
+Preparing to unpack .../03-libpython3.10-minimal_3.10.12-1~22.04.3_amd64.deb ...
+Unpacking libpython3.10-minimal:amd64 (3.10.12-1~22.04.3) over (3.10.12-1~22.04.2) ...
+Selecting previously unselected package libc-dev-bin.
+Preparing to unpack .../04-libc-dev-bin_2.35-0ubuntu3.4_amd64.deb ...
+Unpacking libc-dev-bin (2.35-0ubuntu3.4) ...
+Selecting previously unselected package linux-libc-dev:amd64.
+Preparing to unpack .../05-linux-libc-dev_5.15.0-89.99_amd64.deb ...
+Unpacking linux-libc-dev:amd64 (5.15.0-89.99) ...
+Selecting previously unselected package libcrypt-dev:amd64.
+Preparing to unpack .../06-libcrypt-dev_1%3a4.4.27-1_amd64.deb ...
+Unpacking libcrypt-dev:amd64 (1:4.4.27-1) ...
+Selecting previously unselected package rpcsvc-proto.
+Preparing to unpack .../07-rpcsvc-proto_1.4.2-0ubuntu6_amd64.deb ...
+Unpacking rpcsvc-proto (1.4.2-0ubuntu6) ...
+Selecting previously unselected package libtirpc-dev:amd64.
+Preparing to unpack .../08-libtirpc-dev_1.3.2-2ubuntu0.1_amd64.deb ...
+Unpacking libtirpc-dev:amd64 (1.3.2-2ubuntu0.1) ...
+Selecting previously unselected package libnsl-dev:amd64.
+Preparing to unpack .../09-libnsl-dev_1.3.0-2build2_amd64.deb ...
+Unpacking libnsl-dev:amd64 (1.3.0-2build2) ...
+Selecting previously unselected package libc6-dev:amd64.
+Preparing to unpack .../10-libc6-dev_2.35-0ubuntu3.4_amd64.deb ...
+Unpacking libc6-dev:amd64 (2.35-0ubuntu3.4) ...
+Selecting previously unselected package libcc1-0:amd64.
+Preparing to unpack .../11-libcc1-0_12.3.0-1ubuntu1~22.04_amd64.deb ...
+Unpacking libcc1-0:amd64 (12.3.0-1ubuntu1~22.04) ...
+Selecting previously unselected package libitm1:amd64.
+Preparing to unpack .../12-libitm1_12.3.0-1ubuntu1~22.04_amd64.deb ...
+Unpacking libitm1:amd64 (12.3.0-1ubuntu1~22.04) ...
+Selecting previously unselected package libasan6:amd64.
+Preparing to unpack .../13-libasan6_11.4.0-1ubuntu1~22.04_amd64.deb ...
+Unpacking libasan6:amd64 (11.4.0-1ubuntu1~22.04) ...
+Selecting previously unselected package liblsan0:amd64.
+Preparing to unpack .../14-liblsan0_12.3.0-1ubuntu1~22.04_amd64.deb ...
+Unpacking liblsan0:amd64 (12.3.0-1ubuntu1~22.04) ...
+Selecting previously unselected package libtsan0:amd64.
+Preparing to unpack .../15-libtsan0_11.4.0-1ubuntu1~22.04_amd64.deb ...
+Unpacking libtsan0:amd64 (11.4.0-1ubuntu1~22.04) ...
+Selecting previously unselected package libubsan1:amd64.
+Preparing to unpack .../16-libubsan1_12.3.0-1ubuntu1~22.04_amd64.deb ...
+Unpacking libubsan1:amd64 (12.3.0-1ubuntu1~22.04) ...
+Selecting previously unselected package libquadmath0:amd64.
+Preparing to unpack .../17-libquadmath0_12.3.0-1ubuntu1~22.04_amd64.deb ...
+Unpacking libquadmath0:amd64 (12.3.0-1ubuntu1~22.04) ...
+Selecting previously unselected package libgcc-11-dev:amd64.
+Preparing to unpack .../18-libgcc-11-dev_11.4.0-1ubuntu1~22.04_amd64.deb ...
+Unpacking libgcc-11-dev:amd64 (11.4.0-1ubuntu1~22.04) ...
+Selecting previously unselected package gcc-11.
+Preparing to unpack .../19-gcc-11_11.4.0-1ubuntu1~22.04_amd64.deb ...
+Unpacking gcc-11 (11.4.0-1ubuntu1~22.04) ...
+Selecting previously unselected package gcc.
+Preparing to unpack .../20-gcc_4%3a11.2.0-1ubuntu1_amd64.deb ...
+Unpacking gcc (4:11.2.0-1ubuntu1) ...
+Selecting previously unselected package libstdc++-11-dev:amd64.
+Preparing to unpack .../21-libstdc++-11-dev_11.4.0-1ubuntu1~22.04_amd64.deb ...
+Unpacking libstdc++-11-dev:amd64 (11.4.0-1ubuntu1~22.04) ...
+Selecting previously unselected package g++-11.
+Preparing to unpack .../22-g++-11_11.4.0-1ubuntu1~22.04_amd64.deb ...
+Unpacking g++-11 (11.4.0-1ubuntu1~22.04) ...
+Selecting previously unselected package g++.
+Preparing to unpack .../23-g++_4%3a11.2.0-1ubuntu1_amd64.deb ...
+Unpacking g++ (4:11.2.0-1ubuntu1) ...
+Selecting previously unselected package make.
+Preparing to unpack .../24-make_4.3-4.1build1_amd64.deb ...
+Unpacking make (4.3-4.1build1) ...
+Selecting previously unselected package libdpkg-perl.
+Preparing to unpack .../25-libdpkg-perl_1.21.1ubuntu2.2_all.deb ...
+Unpacking libdpkg-perl (1.21.1ubuntu2.2) ...
+Selecting previously unselected package lto-disabled-list.
+Preparing to unpack .../26-lto-disabled-list_24_all.deb ...
+Unpacking lto-disabled-list (24) ...
+Selecting previously unselected package dpkg-dev.
+Preparing to unpack .../27-dpkg-dev_1.21.1ubuntu2.2_all.deb ...
+Unpacking dpkg-dev (1.21.1ubuntu2.2) ...
+Selecting previously unselected package build-essential.
+Preparing to unpack .../28-build-essential_12.9ubuntu3_amd64.deb ...
+Unpacking build-essential (12.9ubuntu3) ...
+Selecting previously unselected package libfakeroot:amd64.
+Preparing to unpack .../29-libfakeroot_1.28-1ubuntu1_amd64.deb ...
+Unpacking libfakeroot:amd64 (1.28-1ubuntu1) ...
+Selecting previously unselected package fakeroot.
+Preparing to unpack .../30-fakeroot_1.28-1ubuntu1_amd64.deb ...
+Unpacking fakeroot (1.28-1ubuntu1) ...
+Selecting previously unselected package icu-devtools.
+Preparing to unpack .../31-icu-devtools_70.1-2_amd64.deb ...
+Unpacking icu-devtools (70.1-2) ...
+Selecting previously unselected package javascript-common.
+Preparing to unpack .../32-javascript-common_11+nmu1_all.deb ...
+Unpacking javascript-common (11+nmu1) ...
+Selecting previously unselected package libalgorithm-diff-perl.
+Preparing to unpack .../33-libalgorithm-diff-perl_1.201-1_all.deb ...
+Unpacking libalgorithm-diff-perl (1.201-1) ...
+Selecting previously unselected package libalgorithm-diff-xs-perl.
+Preparing to unpack .../34-libalgorithm-diff-xs-perl_0.04-6build3_amd64.deb ...
+Unpacking libalgorithm-diff-xs-perl (0.04-6build3) ...
+Selecting previously unselected package libalgorithm-merge-perl.
+Preparing to unpack .../35-libalgorithm-merge-perl_0.08-3_all.deb ...
+Unpacking libalgorithm-merge-perl (0.08-3) ...
+Selecting previously unselected package libc-devtools.
+Preparing to unpack .../36-libc-devtools_2.35-0ubuntu3.4_amd64.deb ...
+Unpacking libc-devtools (2.35-0ubuntu3.4) ...
+Selecting previously unselected package libexpat1-dev:amd64.
+Preparing to unpack .../37-libexpat1-dev_2.4.7-1ubuntu0.2_amd64.deb ...
+Unpacking libexpat1-dev:amd64 (2.4.7-1ubuntu0.2) ...
+Selecting previously unselected package libfile-fcntllock-perl.
+Preparing to unpack .../38-libfile-fcntllock-perl_0.22-3build7_amd64.deb ...
+Unpacking libfile-fcntllock-perl (0.22-3build7) ...
+Selecting previously unselected package libicu-dev:amd64.
+Preparing to unpack .../39-libicu-dev_70.1-2_amd64.deb ...
+Unpacking libicu-dev:amd64 (70.1-2) ...
+Selecting previously unselected package libjs-jquery.
+Preparing to unpack .../40-libjs-jquery_3.6.0+dfsg+~3.5.13-1_all.deb ...
+Unpacking libjs-jquery (3.6.0+dfsg+~3.5.13-1) ...
+Selecting previously unselected package libjs-underscore.
+Preparing to unpack .../41-libjs-underscore_1.13.2~dfsg-2_all.deb ...
+Unpacking libjs-underscore (1.13.2~dfsg-2) ...
+Selecting previously unselected package libjs-sphinxdoc.
+Preparing to unpack .../42-libjs-sphinxdoc_4.3.2-1_all.deb ...
+Unpacking libjs-sphinxdoc (4.3.2-1) ...
+Selecting previously unselected package libssl-dev:amd64.
+Preparing to unpack .../43-libssl-dev_3.0.2-0ubuntu1.12_amd64.deb ...
+Unpacking libssl-dev:amd64 (3.0.2-0ubuntu1.12) ...
+Selecting previously unselected package libpq-dev.
+Preparing to unpack .../44-libpq-dev_14.10-0ubuntu0.22.04.1_amd64.deb ...
+Unpacking libpq-dev (14.10-0ubuntu0.22.04.1) ...
+Selecting previously unselected package zlib1g-dev:amd64.
+Preparing to unpack .../45-zlib1g-dev_1%3a1.2.11.dfsg-2ubuntu9.2_amd64.deb ...
+Unpacking zlib1g-dev:amd64 (1:1.2.11.dfsg-2ubuntu9.2) ...
+Selecting previously unselected package libpython3.10-dev:amd64.
+Preparing to unpack .../46-libpython3.10-dev_3.10.12-1~22.04.3_amd64.deb ...
+Unpacking libpython3.10-dev:amd64 (3.10.12-1~22.04.3) ...
+Selecting previously unselected package libpython3-dev:amd64.
+Preparing to unpack .../47-libpython3-dev_3.10.6-1~22.04_amd64.deb ...
+Unpacking libpython3-dev:amd64 (3.10.6-1~22.04) ...
+Selecting previously unselected package libxml2-dev:amd64.
+Preparing to unpack .../48-libxml2-dev_2.9.13+dfsg-1ubuntu0.3_amd64.deb ...
+Unpacking libxml2-dev:amd64 (2.9.13+dfsg-1ubuntu0.3) ...
+Selecting previously unselected package libxslt1-dev:amd64.
+Preparing to unpack .../49-libxslt1-dev_1.1.34-4ubuntu0.22.04.1_amd64.deb ...
+Unpacking libxslt1-dev:amd64 (1.1.34-4ubuntu0.22.04.1) ...
+Selecting previously unselected package manpages-dev.
+Preparing to unpack .../50-manpages-dev_5.10-1ubuntu1_all.deb ...
+Unpacking manpages-dev (5.10-1ubuntu1) ...
+Selecting previously unselected package python3.10-dev.
+Preparing to unpack .../51-python3.10-dev_3.10.12-1~22.04.3_amd64.deb ...
+Unpacking python3.10-dev (3.10.12-1~22.04.3) ...
+Selecting previously unselected package python3-dev.
+Preparing to unpack .../52-python3-dev_3.10.6-1~22.04_amd64.deb ...
+Unpacking python3-dev (3.10.6-1~22.04) ...
+Selecting previously unselected package python3-wheel.
+Preparing to unpack .../53-python3-wheel_0.37.1-2ubuntu0.22.04.1_all.deb ...
+Unpacking python3-wheel (0.37.1-2ubuntu0.22.04.1) ...
+Selecting previously unselected package python3-pip.
+Preparing to unpack .../54-python3-pip_22.0.2+dfsg-1ubuntu0.4_all.deb ...
+Unpacking python3-pip (22.0.2+dfsg-1ubuntu0.4) ...
+Selecting previously unselected package python3-pip-whl.
+Preparing to unpack .../55-python3-pip-whl_22.0.2+dfsg-1ubuntu0.4_all.deb ...
+Unpacking python3-pip-whl (22.0.2+dfsg-1ubuntu0.4) ...
+Selecting previously unselected package python3-setuptools-whl.
+Preparing to unpack .../56-python3-setuptools-whl_59.6.0-1.2ubuntu0.22.04.1_all.deb ...
+Unpacking python3-setuptools-whl (59.6.0-1.2ubuntu0.22.04.1) ...
+Selecting previously unselected package python3.10-venv.
+Preparing to unpack .../57-python3.10-venv_3.10.12-1~22.04.3_amd64.deb ...
+Unpacking python3.10-venv (3.10.12-1~22.04.3) ...
+Selecting previously unselected package python3-venv.
+Preparing to unpack .../58-python3-venv_3.10.6-1~22.04_amd64.deb ...
+Unpacking python3-venv (3.10.6-1~22.04) ...
+Selecting previously unselected package libffi-dev:amd64.
+Preparing to unpack .../59-libffi-dev_3.4.2-4_amd64.deb ...
+Unpacking libffi-dev:amd64 (3.4.2-4) ...
+Setting up javascript-common (11+nmu1) ...
+Setting up manpages-dev (5.10-1ubuntu1) ...
+Setting up python3-setuptools-whl (59.6.0-1.2ubuntu0.22.04.1) ...
+Setting up lto-disabled-list (24) ...
+Setting up libfile-fcntllock-perl (0.22-3build7) ...
+Setting up python3-pip-whl (22.0.2+dfsg-1ubuntu0.4) ...
+Setting up libalgorithm-diff-perl (1.201-1) ...
+Setting up linux-libc-dev:amd64 (5.15.0-89.99) ...
+Setting up libffi-dev:amd64 (3.4.2-4) ...
+Setting up python3-wheel (0.37.1-2ubuntu0.22.04.1) ...
+Setting up libfakeroot:amd64 (1.28-1ubuntu1) ...
+Setting up libasan6:amd64 (11.4.0-1ubuntu1~22.04) ...
+Setting up libc6-dbg:amd64 (2.35-0ubuntu3.4) ...
+Setting up fakeroot (1.28-1ubuntu1) ...
+update-alternatives: using /usr/bin/fakeroot-sysv to provide /usr/bin/fakeroot (fakeroot) in auto mode
+Setting up libtirpc-dev:amd64 (1.3.2-2ubuntu0.1) ...
+Setting up rpcsvc-proto (1.4.2-0ubuntu6) ...
+Setting up make (4.3-4.1build1) ...
+Setting up libquadmath0:amd64 (12.3.0-1ubuntu1~22.04) ...
+Setting up libssl-dev:amd64 (3.0.2-0ubuntu1.12) ...
+Setting up libpython3.10-minimal:amd64 (3.10.12-1~22.04.3) ...
+Setting up icu-devtools (70.1-2) ...
+Setting up python3-pip (22.0.2+dfsg-1ubuntu0.4) ...
+Setting up libdpkg-perl (1.21.1ubuntu2.2) ...
+Setting up libubsan1:amd64 (12.3.0-1ubuntu1~22.04) ...
+Setting up libnsl-dev:amd64 (1.3.0-2build2) ...
+Setting up libcrypt-dev:amd64 (1:4.4.27-1) ...
+Setting up libjs-jquery (3.6.0+dfsg+~3.5.13-1) ...
+Setting up libc-dev-bin (2.35-0ubuntu3.4) ...
+Setting up libalgorithm-diff-xs-perl (0.04-6build3) ...
+Setting up libcc1-0:amd64 (12.3.0-1ubuntu1~22.04) ...
+Setting up liblsan0:amd64 (12.3.0-1ubuntu1~22.04) ...
+Setting up libitm1:amd64 (12.3.0-1ubuntu1~22.04) ...
+Setting up libc-devtools (2.35-0ubuntu3.4) ...
+Setting up libjs-underscore (1.13.2~dfsg-2) ...
+Setting up libalgorithm-merge-perl (0.08-3) ...
+Setting up libtsan0:amd64 (11.4.0-1ubuntu1~22.04) ...
+Setting up libpq-dev (14.10-0ubuntu0.22.04.1) ...
+Setting up python3.10-minimal (3.10.12-1~22.04.3) ...
+Setting up dpkg-dev (1.21.1ubuntu2.2) ...
+Setting up libpython3.10-stdlib:amd64 (3.10.12-1~22.04.3) ...
+Setting up libjs-sphinxdoc (4.3.2-1) ...
+Setting up libgcc-11-dev:amd64 (11.4.0-1ubuntu1~22.04) ...
+Setting up gcc-11 (11.4.0-1ubuntu1~22.04) ...
+Setting up libc6-dev:amd64 (2.35-0ubuntu3.4) ...
+Setting up libicu-dev:amd64 (70.1-2) ...
+Setting up libpython3.10:amd64 (3.10.12-1~22.04.3) ...
+Setting up python3.10 (3.10.12-1~22.04.3) ...
+Setting up gcc (4:11.2.0-1ubuntu1) ...
+Setting up libxml2-dev:amd64 (2.9.13+dfsg-1ubuntu0.3) ...
+Setting up libexpat1-dev:amd64 (2.4.7-1ubuntu0.2) ...
+Setting up libstdc++-11-dev:amd64 (11.4.0-1ubuntu1~22.04) ...
+Setting up zlib1g-dev:amd64 (1:1.2.11.dfsg-2ubuntu9.2) ...
+Setting up python3.10-venv (3.10.12-1~22.04.3) ...
+Setting up libxslt1-dev:amd64 (1.1.34-4ubuntu0.22.04.1) ...
+Setting up g++-11 (11.4.0-1ubuntu1~22.04) ...
+Setting up python3-venv (3.10.6-1~22.04) ...
+Setting up libpython3.10-dev:amd64 (3.10.12-1~22.04.3) ...
+Setting up python3.10-dev (3.10.12-1~22.04.3) ...
+Setting up g++ (4:11.2.0-1ubuntu1) ...
+update-alternatives: using /usr/bin/g++ to provide /usr/bin/c++ (c++) in auto mode
+Setting up build-essential (12.9ubuntu3) ...
+Setting up libpython3-dev:amd64 (3.10.6-1~22.04) ...
+Setting up python3-dev (3.10.6-1~22.04) ...
+Processing triggers for mailcap (3.70+nmu1ubuntu1) ...
+Processing triggers for desktop-file-utils (0.26-1ubuntu3) ...
+Processing triggers for gnome-menus (3.36.0-1ubuntu3) ...
+Processing triggers for libc-bin (2.35-0ubuntu3.3) ...
+Processing triggers for man-db (2.10.2-1) ...
+Processing triggers for install-info (6.8-4build1) ...
+Command executed successfully:
+sudo apt install -y python3 python3-pip python3-venv python3-dev build-essential libxml2-dev libxslt1-dev libffi-dev libpq-dev libssl-dev zlib1g-dev
+
+#7. Create the NetBox directory and clone the repository.
+
+Command executed successfully: sudo mkdir -p /opt/netbox/
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following packages were automatically installed and are no longer required:
+  acpi-support acpid aisleriot apt-config-icons-hidpi apturl apturl-common
+  baobab bluez-cups branding-ubuntu cheese dc deja-dup dmz-cursor-theme
+  duplicity eog file-roller fonts-beng fonts-beng-extra fonts-deva
+  fonts-deva-extra fonts-gargi fonts-gubbi fonts-gujr fonts-gujr-extra
+  fonts-guru fonts-guru-extra fonts-indic fonts-kacst fonts-kacst-one
+  fonts-kalapi fonts-khmeros-core fonts-knda fonts-lao fonts-lklug-sinhala
+  fonts-lohit-beng-assamese fonts-lohit-beng-bengali fonts-lohit-deva
+  fonts-lohit-gujr fonts-lohit-guru fonts-lohit-knda fonts-lohit-mlym
+  fonts-lohit-orya fonts-lohit-taml fonts-lohit-taml-classical
+  fonts-lohit-telu fonts-mlym fonts-nakula fonts-navilu fonts-noto-cjk
+  fonts-noto-color-emoji fonts-opensymbol fonts-orya fonts-orya-extra
+  fonts-pagul fonts-sahadeva fonts-samyak-deva fonts-samyak-gujr
+  fonts-samyak-mlym fonts-samyak-taml fonts-sarai fonts-sil-abyssinica
+  fonts-sil-padauk fonts-smc fonts-smc-anjalioldlipi fonts-smc-chilanka
+  fonts-smc-dyuthi fonts-smc-gayathri fonts-smc-karumbi fonts-smc-keraleeyam
+  fonts-smc-manjari fonts-smc-meera fonts-smc-rachana
+  fonts-smc-raghumalayalamsans fonts-smc-suruma fonts-smc-uroob fonts-taml
+  fonts-telu fonts-telu-extra fonts-teluguvijayam fonts-thai-tlwg
+  fonts-tibetan-machine fonts-tlwg-garuda fonts-tlwg-garuda-ttf
+  fonts-tlwg-kinnari fonts-tlwg-kinnari-ttf fonts-tlwg-laksaman
+  fonts-tlwg-laksaman-ttf fonts-tlwg-loma fonts-tlwg-loma-ttf fonts-tlwg-mono
+  fonts-tlwg-mono-ttf fonts-tlwg-norasi fonts-tlwg-norasi-ttf
+  fonts-tlwg-purisa fonts-tlwg-purisa-ttf fonts-tlwg-sawasdee
+  fonts-tlwg-sawasdee-ttf fonts-tlwg-typewriter fonts-tlwg-typewriter-ttf
+  fonts-tlwg-typist fonts-tlwg-typist-ttf fonts-tlwg-typo fonts-tlwg-typo-ttf
+  fonts-tlwg-umpush fonts-tlwg-umpush-ttf fonts-tlwg-waree
+  fonts-tlwg-waree-ttf fonts-yrsa-rasa fwupd fwupd-signed gamemode
+  gamemode-daemon genisoimage gir1.2-gmenu-3.0 gir1.2-gst-plugins-base-1.0
+  gir1.2-gudev-1.0 gir1.2-rb-3.0 gir1.2-totem-1.0 gir1.2-totemplparser-1.0
+  gir1.2-udisks-2.0 gjs gnome-accessibility-themes gnome-bluetooth
+  gnome-calculator gnome-calendar gnome-characters gnome-disk-utility
+  gnome-font-viewer gnome-initial-setup gnome-logs gnome-mahjongg gnome-mines
+  gnome-power-manager gnome-session-canberra
+  gnome-shell-extension-appindicator gnome-shell-extension-desktop-icons-ng
+  gnome-shell-extension-ubuntu-dock gnome-sudoku gnome-system-monitor
+  gnome-themes-extra gnome-themes-extra-data gnome-todo gnome-todo-common
+  gnome-video-effects grilo-plugins-0.3-base gsettings-ubuntu-schemas
+  gstreamer1.0-gtk3 gstreamer1.0-packagekit gstreamer1.0-plugins-base-apps
+  gtk2-engines-murrine gtk2-engines-pixbuf guile-2.2-libs gvfs-fuse ibus-table
+  inputattach kerneloops libabw-0.1-1 libatkmm-1.6-1v5 libavahi-ui-gtk3-0
+  libboost-filesystem1.74.0 libboost-iostreams1.74.0 libboost-locale1.74.0
+  libboost-thread1.74.0 libcairomm-1.0-1v5 libcdr-0.1-1 libclucene-contribs1v5
+  libclucene-core1v5 libcolamd2 libcue2 libcupsimage2 libdazzle-1.0-0
+  libdazzle-common libdmapsharing-3.0-2 libe-book-0.1-1 libeot0
+  libepubgen-0.1-1 libetonyek-0.1-1 libevent-2.1-7 libexempi8 libexiv2-27
+  libexttextcat-2.0-0 libexttextcat-data libfreehand-0.1-1 libfwupd2
+  libfwupdplugin5 libgamemode0 libgamemodeauto0 libgcab-1.0-0 libgexiv2-2
+  libglibmm-2.4-1v5 libglu1-mesa libgnome-games-support-1-3
+  libgnome-games-support-common libgnome-menu-3-0 libgnome-todo libgom-1.0-0
+  libgpgmepp6 libgpod-common libgpod4 libgrilo-0.3-0 libgsf-1-114
+  libgsf-1-common libgtkmm-3.0-1v5 libjcat1 liblangtag-common liblangtag1
+  liblirc-client0 liblua5.3-0 libmessaging-menu0 libmhash2 libminiupnpc17
+  libmspub-0.1-1 libmwaw-0.3-3 libmythes-1.2-0 libnatpmp1 libodfgen-0.1-1
+  libopengl0 liborcus-0.17-0 liborcus-parser-0.17-0 libpagemaker-0.0-0
+  libpangomm-1.4-1v5 libproxy1-plugin-gsettings
+  libproxy1-plugin-networkmanager libqqwing2v5 libraptor2-0 librasqal3
+  libraw20 librdf0 libreoffice-base-core libreoffice-calc libreoffice-common
+  libreoffice-core libreoffice-draw libreoffice-gnome libreoffice-gtk3
+  libreoffice-impress libreoffice-math libreoffice-pdfimport
+  libreoffice-style-breeze libreoffice-style-colibre
+  libreoffice-style-elementary libreoffice-style-yaru libreoffice-writer
+  librevenge-0.0-0 librhythmbox-core10 librsync2 libsigc++-2.0-0v5
+  libsmbios-c2 libsuitesparseconfig5 libsysmetrics1 libtotem-plparser-common
+  libtotem-plparser18 libtotem0 libtracker-sparql-3.0-0 libu2f-udev
+  libuno-cppu3 libuno-cppuhelpergcc3-3 libuno-purpenvhelpergcc3-3 libuno-sal3
+  libuno-salhelpergcc3-3 libvisio-0.1-1 libvncclient1 libwmf-0.2-7
+  libwmf-0.2-7-gtk libwmf0.2-7-gtk libwpd-0.10-10 libwpg-0.3-3 libwps-0.4-4
+  libxmlsec1 libxmlsec1-nss libyajl2 lp-solve media-player-info memtest86+
+  mousetweaks mscompress nautilus nautilus-data nautilus-share
+  network-manager-config-connectivity-ubuntu pcmciautils
+  policykit-desktop-privileges printer-driver-brlaser printer-driver-c2esp
+  printer-driver-foo2zjs printer-driver-foo2zjs-common printer-driver-m2300w
+  printer-driver-min12xxw printer-driver-pnm2ppa printer-driver-ptouch
+  printer-driver-pxljr printer-driver-sag-gdi printer-driver-splix
+  python3-bcrypt python3-fasteners python3-future python3-lockfile
+  python3-mako python3-monotonic python3-paramiko python3-uno remmina
+  remmina-common remmina-plugin-rdp remmina-plugin-secret remmina-plugin-vnc
+  rfkill rhythmbox rhythmbox-data rhythmbox-plugin-alternative-toolbar
+  rhythmbox-plugins sbsigntool seahorse secureboot-db shotwell shotwell-common
+  simple-scan spice-vdagent systemd-oomd thunderbird thunderbird-gnome-support
+  totem totem-common totem-plugins tracker tracker-extract tracker-miner-fs
+  transmission-common transmission-gtk ubuntu-report ubuntu-settings
+  uno-libs-private ure usb-creator-common usb-creator-gtk x11-apps
+  x11-session-utils xbitmaps xcursor-themes xdg-user-dirs-gtk xinit xorg
+  yaru-theme-gtk yaru-theme-icon yaru-theme-sound
+Use 'sudo apt autoremove' to remove them.
+The following additional packages will be installed:
+  git-man liberror-perl
+Suggested packages:
+  git-daemon-run | git-daemon-sysvinit git-doc git-email git-gui gitk gitweb
+  git-cvs git-mediawiki git-svn
+The following NEW packages will be installed:
+  git git-man liberror-perl
+0 upgraded, 3 newly installed, 0 to remove and 125 not upgraded.
+Need to get 4147 kB of archives.
+After this operation, 21.0 MB of additional disk space will be used.
+Get:1 http://au.archive.ubuntu.com/ubuntu jammy/main amd64 liberror-perl all 0.17029-1 [26.5 kB]
+Get:2 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 git-man all 1:2.34.1-1ubuntu1.10 [954 kB]
+Get:3 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 git amd64 1:2.34.1-1ubuntu1.10 [3166 kB]
+Fetched 4147 kB in 1s (5323 kB/s)
+Selecting previously unselected package liberror-perl.
+(Reading database ...
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 205335 files and directories currently installed.)
+Preparing to unpack .../liberror-perl_0.17029-1_all.deb ...
+Unpacking liberror-perl (0.17029-1) ...
+Selecting previously unselected package git-man.
+Preparing to unpack .../git-man_1%3a2.34.1-1ubuntu1.10_all.deb ...
+Unpacking git-man (1:2.34.1-1ubuntu1.10) ...
+Selecting previously unselected package git.
+Preparing to unpack .../git_1%3a2.34.1-1ubuntu1.10_amd64.deb ...
+Unpacking git (1:2.34.1-1ubuntu1.10) ...
+Setting up liberror-perl (0.17029-1) ...
+Setting up git-man (1:2.34.1-1ubuntu1.10) ...
+Setting up git (1:2.34.1-1ubuntu1.10) ...
+Processing triggers for man-db (2.10.2-1) ...
+Command executed successfully: sudo apt install -y git
+
+Command executed successfully: sudo git clone -b master --depth 1 https://github.com/netbox-community/netbox.git .
+#8. Create NetBox system user and change the ownership of the media directory for any device images to be used.
+Adding system user `netbox' (UID 132) ...
+Adding new group `netbox' (GID 137) ...
+Adding new user `netbox' (UID 132) with group `netbox' ...
+Creating home directory `/home/netbox' ...
+Command executed successfully: sudo adduser --system --group netbox
+
+Command executed successfully: sudo chown --recursive netbox /opt/netbox/netbox/media/
+#9. Change directory, copy example configuration file, and then modify it.
+
+Command executed successfully: sudo cp configuration_example.py configuration.py
+#10. Update configuration.py file with the SQL user and password.
+# 10a. Update configuration.py file with the SQL user and password.
+# 10b. Generating a secret key...
+0DLH)V_nw-rwacOgIf-pE4mnP)NMagl_V1$8z-)ui8dW!0zjh@
+Command executed successfully: python3 /opt/netbox/netbox/generate_secret_key.py
+# Generated Secret Key: 0DLH)V_nw-rwacOgIf-pE4mnP)NMagl_V1$8z-)ui8dW!0zjh@
+# Appending the SECRET_KEY to the configuration.py file...
+
+Command executed successfully: sudo echo 'SECRET_KEY = "0DLH)V_nw-rwacOgIf-pE4mnP)NMagl_V1$8z-)ui8dW!0zjh@"' >> /opt/netbox/netbox/netbox/configuration.py
+#11. Append 'napalm' to local_requirements.txt.
+
+Command executed successfully: sudo sh -c "echo 'napalm' >> /opt/netbox/local_requirements.txt"
+# 12. Running the upgrade script...
+Using Python 3.10.12
+Creating a new virtual environment at /opt/netbox/venv...
+Updating pip (pip install --upgrade pip)...
+Requirement already satisfied: pip in ./venv/lib/python3.10/site-packages (22.0.2)
+Collecting pip
+  Downloading pip-23.3.1-py3-none-any.whl (2.1 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 5.9 MB/s eta 0:00:00
+Installing collected packages: pip
+  Attempting uninstall: pip
+    Found existing installation: pip 22.0.2
+    Uninstalling pip-22.0.2:
+      Successfully uninstalled pip-22.0.2
+Successfully installed pip-23.3.1
+pip 23.3.1 from /opt/netbox/venv/lib/python3.10/site-packages/pip (python 3.10)
+Installing Python system packages (pip install wheel)...
+Collecting wheel
+  Downloading wheel-0.42.0-py3-none-any.whl.metadata (2.2 kB)
+Downloading wheel-0.42.0-py3-none-any.whl (65 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 65.4/65.4 kB 880.1 kB/s eta 0:00:00
+Installing collected packages: wheel
+Successfully installed wheel-0.42.0
+Installing core dependencies (pip install -r requirements.txt)...
+Collecting bleach==6.1.0 (from -r requirements.txt (line 1))
+  Downloading bleach-6.1.0-py3-none-any.whl.metadata (30 kB)
+Collecting Django==4.2.7 (from -r requirements.txt (line 2))
+  Downloading Django-4.2.7-py3-none-any.whl.metadata (4.1 kB)
+Collecting django-cors-headers==4.3.1 (from -r requirements.txt (line 3))
+  Downloading django_cors_headers-4.3.1-py3-none-any.whl.metadata (16 kB)
+Collecting django-debug-toolbar==4.2.0 (from -r requirements.txt (line 4))
+  Downloading django_debug_toolbar-4.2.0-py3-none-any.whl.metadata (3.8 kB)
+Collecting django-filter==23.4 (from -r requirements.txt (line 5))
+  Downloading django_filter-23.4-py3-none-any.whl.metadata (5.2 kB)
+Collecting django-graphiql-debug-toolbar==0.2.0 (from -r requirements.txt (line 6))
+  Downloading django_graphiql_debug_toolbar-0.2.0-py3-none-any.whl (7.3 kB)
+Collecting django-mptt==0.14.0 (from -r requirements.txt (line 7))
+  Downloading django_mptt-0.14.0-py3-none-any.whl (115 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 115.6/115.6 kB 6.0 MB/s eta 0:00:00
+Collecting django-pglocks==1.0.4 (from -r requirements.txt (line 8))
+  Downloading django-pglocks-1.0.4.tar.gz (4.1 kB)
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Collecting django-prometheus==2.3.1 (from -r requirements.txt (line 9))
+  Downloading django_prometheus-2.3.1-py2.py3-none-any.whl (29 kB)
+Collecting django-redis==5.4.0 (from -r requirements.txt (line 10))
+  Downloading django_redis-5.4.0-py3-none-any.whl.metadata (32 kB)
+Collecting django-rich==1.8.0 (from -r requirements.txt (line 11))
+  Downloading django_rich-1.8.0-py3-none-any.whl.metadata (6.8 kB)
+Collecting django-rq==2.9.0 (from -r requirements.txt (line 12))
+  Downloading django_rq-2.9.0-py2.py3-none-any.whl.metadata (18 kB)
+Collecting django-tables2==2.6.0 (from -r requirements.txt (line 13))
+  Downloading django_tables2-2.6.0-py2.py3-none-any.whl.metadata (3.8 kB)
+Collecting django-taggit==4.0.0 (from -r requirements.txt (line 14))
+  Downloading django_taggit-4.0.0-py3-none-any.whl (60 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 60.3/60.3 kB 8.4 MB/s eta 0:00:00
+Collecting django-timezone-field==6.1.0 (from -r requirements.txt (line 15))
+  Downloading django_timezone_field-6.1.0-py3-none-any.whl.metadata (12 kB)
+Collecting djangorestframework==3.14.0 (from -r requirements.txt (line 16))
+  Downloading djangorestframework-3.14.0-py3-none-any.whl (1.1 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 6.8 MB/s eta 0:00:00
+Collecting drf-spectacular==0.26.5 (from -r requirements.txt (line 17))
+  Downloading drf_spectacular-0.26.5-py3-none-any.whl.metadata (13 kB)
+Collecting drf-spectacular-sidecar==2023.10.1 (from -r requirements.txt (line 18))
+  Downloading drf_spectacular_sidecar-2023.10.1-py3-none-any.whl.metadata (3.4 kB)
+Collecting feedparser==6.0.10 (from -r requirements.txt (line 19))
+  Downloading feedparser-6.0.10-py3-none-any.whl (81 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 81.1/81.1 kB 6.2 MB/s eta 0:00:00
+Collecting graphene-django==3.0.0 (from -r requirements.txt (line 20))
+  Downloading graphene_django-3.0.0-py2.py3-none-any.whl (101 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 101.9/101.9 kB 6.8 MB/s eta 0:00:00
+Collecting gunicorn==21.2.0 (from -r requirements.txt (line 21))
+  Downloading gunicorn-21.2.0-py3-none-any.whl.metadata (4.1 kB)
+Collecting Jinja2==3.1.2 (from -r requirements.txt (line 22))
+  Downloading Jinja2-3.1.2-py3-none-any.whl (133 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 133.1/133.1 kB 8.6 MB/s eta 0:00:00
+Collecting Markdown==3.3.7 (from -r requirements.txt (line 23))
+  Downloading Markdown-3.3.7-py3-none-any.whl (97 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 97.8/97.8 kB 7.5 MB/s eta 0:00:00
+Collecting mkdocs-material==9.4.14 (from -r requirements.txt (line 24))
+  Downloading mkdocs_material-9.4.14-py3-none-any.whl.metadata (16 kB)
+Collecting mkdocstrings==0.24.0 (from mkdocstrings[python-legacy]==0.24.0->-r requirements.txt (line 25))
+  Downloading mkdocstrings-0.24.0-py3-none-any.whl.metadata (7.7 kB)
+Collecting netaddr==0.9.0 (from -r requirements.txt (line 26))
+  Downloading netaddr-0.9.0-py3-none-any.whl.metadata (5.1 kB)
+Collecting Pillow==10.1.0 (from -r requirements.txt (line 27))
+  Downloading Pillow-10.1.0-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (9.5 kB)
+Collecting psycopg==3.1.13 (from psycopg[binary,pool]==3.1.13->-r requirements.txt (line 28))
+  Downloading psycopg-3.1.13-py3-none-any.whl.metadata (4.0 kB)
+Collecting PyYAML==6.0.1 (from -r requirements.txt (line 29))
+  Downloading PyYAML-6.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (2.1 kB)
+Collecting requests==2.31.0 (from -r requirements.txt (line 30))
+  Downloading requests-2.31.0-py3-none-any.whl.metadata (4.6 kB)
+Collecting sentry-sdk==1.38.0 (from -r requirements.txt (line 31))
+  Downloading sentry_sdk-1.38.0-py2.py3-none-any.whl.metadata (9.7 kB)
+Collecting social-auth-app-django==5.4.0 (from -r requirements.txt (line 32))
+  Downloading social_auth_app_django-5.4.0-py3-none-any.whl.metadata (3.2 kB)
+Collecting social-auth-core==4.5.1 (from social-auth-core[openidconnect]==4.5.1->-r requirements.txt (line 33))
+  Downloading social_auth_core-4.5.1-py3-none-any.whl.metadata (4.1 kB)
+Collecting svgwrite==1.4.3 (from -r requirements.txt (line 34))
+  Downloading svgwrite-1.4.3-py3-none-any.whl (67 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 67.1/67.1 kB 6.1 MB/s eta 0:00:00
+Collecting tablib==3.5.0 (from -r requirements.txt (line 35))
+  Downloading tablib-3.5.0-py3-none-any.whl.metadata (3.8 kB)
+Collecting tzdata==2023.3 (from -r requirements.txt (line 36))
+  Downloading tzdata-2023.3-py2.py3-none-any.whl (341 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 341.8/341.8 kB 7.0 MB/s eta 0:00:00
+Collecting six>=1.9.0 (from bleach==6.1.0->-r requirements.txt (line 1))
+  Downloading six-1.16.0-py2.py3-none-any.whl (11 kB)
+Collecting webencodings (from bleach==6.1.0->-r requirements.txt (line 1))
+  Downloading webencodings-0.5.1-py2.py3-none-any.whl (11 kB)
+Collecting asgiref<4,>=3.6.0 (from Django==4.2.7->-r requirements.txt (line 2))
+  Downloading asgiref-3.7.2-py3-none-any.whl.metadata (9.2 kB)
+Collecting sqlparse>=0.3.1 (from Django==4.2.7->-r requirements.txt (line 2))
+  Downloading sqlparse-0.4.4-py3-none-any.whl (41 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 41.2/41.2 kB 6.1 MB/s eta 0:00:00
+Collecting django-js-asset (from django-mptt==0.14.0->-r requirements.txt (line 7))
+  Downloading django_js_asset-2.1.0-py3-none-any.whl.metadata (3.4 kB)
+Collecting prometheus-client>=0.7 (from django-prometheus==2.3.1->-r requirements.txt (line 9))
+  Downloading prometheus_client-0.19.0-py3-none-any.whl.metadata (1.8 kB)
+Collecting redis!=4.0.0,!=4.0.1,>=3 (from django-redis==5.4.0->-r requirements.txt (line 10))
+  Downloading redis-5.0.1-py3-none-any.whl.metadata (8.9 kB)
+Collecting rich>=10.0.0 (from django-rich==1.8.0->-r requirements.txt (line 11))
+  Downloading rich-13.7.0-py3-none-any.whl.metadata (18 kB)
+Collecting rq>=1.14 (from django-rq==2.9.0->-r requirements.txt (line 12))
+  Downloading rq-1.15.1-py2.py3-none-any.whl.metadata (1.6 kB)
+Collecting pytz (from djangorestframework==3.14.0->-r requirements.txt (line 16))
+  Downloading pytz-2023.3.post1-py2.py3-none-any.whl.metadata (22 kB)
+Collecting uritemplate>=2.0.0 (from drf-spectacular==0.26.5->-r requirements.txt (line 17))
+  Downloading uritemplate-4.1.1-py2.py3-none-any.whl (10 kB)
+Collecting jsonschema>=2.6.0 (from drf-spectacular==0.26.5->-r requirements.txt (line 17))
+  Downloading jsonschema-4.20.0-py3-none-any.whl.metadata (8.1 kB)
+Collecting inflection>=0.3.1 (from drf-spectacular==0.26.5->-r requirements.txt (line 17))
+  Downloading inflection-0.5.1-py2.py3-none-any.whl (9.5 kB)
+Collecting sgmllib3k (from feedparser==6.0.10->-r requirements.txt (line 19))
+  Downloading sgmllib3k-1.0.0.tar.gz (5.8 kB)
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Collecting graphene<4,>=3.0 (from graphene-django==3.0.0->-r requirements.txt (line 20))
+  Downloading graphene-3.3-py2.py3-none-any.whl.metadata (7.7 kB)
+Collecting graphql-core<4,>=3.1.0 (from graphene-django==3.0.0->-r requirements.txt (line 20))
+  Downloading graphql_core-3.2.3-py3-none-any.whl (202 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 202.9/202.9 kB 6.2 MB/s eta 0:00:00
+Collecting graphql-relay<4,>=3.1.1 (from graphene-django==3.0.0->-r requirements.txt (line 20))
+  Downloading graphql_relay-3.2.0-py3-none-any.whl (16 kB)
+Collecting promise>=2.1 (from graphene-django==3.0.0->-r requirements.txt (line 20))
+  Downloading promise-2.3.tar.gz (19 kB)
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Collecting text-unidecode (from graphene-django==3.0.0->-r requirements.txt (line 20))
+  Downloading text_unidecode-1.3-py2.py3-none-any.whl (78 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.2/78.2 kB 6.0 MB/s eta 0:00:00
+Collecting packaging (from gunicorn==21.2.0->-r requirements.txt (line 21))
+  Downloading packaging-23.2-py3-none-any.whl.metadata (3.2 kB)
+Collecting MarkupSafe>=2.0 (from Jinja2==3.1.2->-r requirements.txt (line 22))
+  Downloading MarkupSafe-2.1.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (3.0 kB)
+Collecting babel~=2.10 (from mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading Babel-2.13.1-py3-none-any.whl.metadata (1.6 kB)
+Collecting colorama~=0.4 (from mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+Collecting mkdocs-material-extensions~=1.3 (from mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading mkdocs_material_extensions-1.3.1-py3-none-any.whl.metadata (6.9 kB)
+Collecting mkdocs>=1.5.3,~=1.5 (from mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading mkdocs-1.5.3-py3-none-any.whl.metadata (6.2 kB)
+Collecting paginate~=0.5 (from mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading paginate-0.5.6.tar.gz (12 kB)
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Collecting pygments~=2.16 (from mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading pygments-2.17.2-py3-none-any.whl.metadata (2.6 kB)
+Collecting pymdown-extensions~=10.2 (from mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading pymdown_extensions-10.5-py3-none-any.whl.metadata (3.0 kB)
+Collecting regex>=2022.4 (from mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading regex-2023.10.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (40 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 40.9/40.9 kB 7.5 MB/s eta 0:00:00
+Collecting click>=7.0 (from mkdocstrings==0.24.0->mkdocstrings[python-legacy]==0.24.0->-r requirements.txt (line 25))
+  Downloading click-8.1.7-py3-none-any.whl.metadata (3.0 kB)
+Collecting mkdocs-autorefs>=0.3.1 (from mkdocstrings==0.24.0->mkdocstrings[python-legacy]==0.24.0->-r requirements.txt (line 25))
+  Downloading mkdocs_autorefs-0.5.0-py3-none-any.whl.metadata (4.0 kB)
+Collecting platformdirs>=2.2.0 (from mkdocstrings==0.24.0->mkdocstrings[python-legacy]==0.24.0->-r requirements.txt (line 25))
+  Downloading platformdirs-4.1.0-py3-none-any.whl.metadata (11 kB)
+Collecting typing-extensions>=4.1 (from psycopg==3.1.13->psycopg[binary,pool]==3.1.13->-r requirements.txt (line 28))
+  Downloading typing_extensions-4.8.0-py3-none-any.whl.metadata (3.0 kB)
+Collecting charset-normalizer<4,>=2 (from requests==2.31.0->-r requirements.txt (line 30))
+  Downloading charset_normalizer-3.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (33 kB)
+Collecting idna<4,>=2.5 (from requests==2.31.0->-r requirements.txt (line 30))
+  Downloading idna-3.6-py3-none-any.whl.metadata (9.9 kB)
+Collecting urllib3<3,>=1.21.1 (from requests==2.31.0->-r requirements.txt (line 30))
+  Downloading urllib3-2.1.0-py3-none-any.whl.metadata (6.4 kB)
+Collecting certifi>=2017.4.17 (from requests==2.31.0->-r requirements.txt (line 30))
+  Downloading certifi-2023.11.17-py3-none-any.whl.metadata (2.2 kB)
+Collecting oauthlib>=1.0.3 (from social-auth-core==4.5.1->social-auth-core[openidconnect]==4.5.1->-r requirements.txt (line 33))
+  Downloading oauthlib-3.2.2-py3-none-any.whl (151 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 151.7/151.7 kB 6.0 MB/s eta 0:00:00
+Collecting requests-oauthlib>=0.6.1 (from social-auth-core==4.5.1->social-auth-core[openidconnect]==4.5.1->-r requirements.txt (line 33))
+  Downloading requests_oauthlib-1.3.1-py2.py3-none-any.whl (23 kB)
+Collecting PyJWT>=2.7.0 (from social-auth-core==4.5.1->social-auth-core[openidconnect]==4.5.1->-r requirements.txt (line 33))
+  Downloading PyJWT-2.8.0-py3-none-any.whl.metadata (4.2 kB)
+Collecting cryptography>=1.4 (from social-auth-core==4.5.1->social-auth-core[openidconnect]==4.5.1->-r requirements.txt (line 33))
+  Downloading cryptography-41.0.7-cp37-abi3-manylinux_2_28_x86_64.whl.metadata (5.2 kB)
+Collecting defusedxml>=0.5.0rc1 (from social-auth-core==4.5.1->social-auth-core[openidconnect]==4.5.1->-r requirements.txt (line 33))
+  Downloading defusedxml-0.8.0rc2-py2.py3-none-any.whl.metadata (33 kB)
+Collecting python3-openid>=3.0.10 (from social-auth-core==4.5.1->social-auth-core[openidconnect]==4.5.1->-r requirements.txt (line 33))
+  Downloading python3_openid-3.2.0-py3-none-any.whl (133 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 133.7/133.7 kB 5.5 MB/s eta 0:00:00
+Collecting mkdocstrings-python-legacy>=0.2.1 (from mkdocstrings[python-legacy]==0.24.0->-r requirements.txt (line 25))
+  Downloading mkdocstrings_python_legacy-0.2.3-py3-none-any.whl (26 kB)
+Collecting psycopg-binary==3.1.13 (from psycopg[binary,pool]==3.1.13->-r requirements.txt (line 28))
+  Downloading psycopg_binary-3.1.13-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (2.7 kB)
+Collecting psycopg-pool (from psycopg[binary,pool]==3.1.13->-r requirements.txt (line 28))
+  Downloading psycopg_pool-3.2.0-py3-none-any.whl.metadata (2.5 kB)
+Collecting cffi>=1.12 (from cryptography>=1.4->social-auth-core==4.5.1->social-auth-core[openidconnect]==4.5.1->-r requirements.txt (line 33))
+  Downloading cffi-1.16.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.5 kB)
+Collecting aniso8601<10,>=8 (from graphene<4,>=3.0->graphene-django==3.0.0->-r requirements.txt (line 20))
+  Downloading aniso8601-9.0.1-py2.py3-none-any.whl (52 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 52.8/52.8 kB 8.4 MB/s eta 0:00:00
+Collecting attrs>=22.2.0 (from jsonschema>=2.6.0->drf-spectacular==0.26.5->-r requirements.txt (line 17))
+  Downloading attrs-23.1.0-py3-none-any.whl (61 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 61.2/61.2 kB 8.2 MB/s eta 0:00:00
+Collecting jsonschema-specifications>=2023.03.6 (from jsonschema>=2.6.0->drf-spectacular==0.26.5->-r requirements.txt (line 17))
+  Downloading jsonschema_specifications-2023.11.2-py3-none-any.whl.metadata (3.0 kB)
+Collecting referencing>=0.28.4 (from jsonschema>=2.6.0->drf-spectacular==0.26.5->-r requirements.txt (line 17))
+  Downloading referencing-0.31.1-py3-none-any.whl.metadata (2.7 kB)
+Collecting rpds-py>=0.7.1 (from jsonschema>=2.6.0->drf-spectacular==0.26.5->-r requirements.txt (line 17))
+  Downloading rpds_py-0.13.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (3.9 kB)
+Collecting ghp-import>=1.0 (from mkdocs>=1.5.3,~=1.5->mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading ghp_import-2.1.0-py3-none-any.whl (11 kB)
+Collecting mergedeep>=1.3.4 (from mkdocs>=1.5.3,~=1.5->mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading mergedeep-1.3.4-py3-none-any.whl (6.4 kB)
+Collecting pathspec>=0.11.1 (from mkdocs>=1.5.3,~=1.5->mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading pathspec-0.11.2-py3-none-any.whl.metadata (19 kB)
+Collecting pyyaml-env-tag>=0.1 (from mkdocs>=1.5.3,~=1.5->mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading pyyaml_env_tag-0.1-py3-none-any.whl (3.9 kB)
+Collecting watchdog>=2.0 (from mkdocs>=1.5.3,~=1.5->mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading watchdog-3.0.0-py3-none-manylinux2014_x86_64.whl (82 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 82.1/82.1 kB 5.7 MB/s eta 0:00:00
+Collecting pytkdocs>=0.14 (from mkdocstrings-python-legacy>=0.2.1->mkdocstrings[python-legacy]==0.24.0->-r requirements.txt (line 25))
+  Downloading pytkdocs-0.16.1-py3-none-any.whl (37 kB)
+INFO: pip is looking at multiple versions of pymdown-extensions to determine which version is compatible with other requirements. This could take a while.
+Collecting pymdown-extensions~=10.2 (from mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading pymdown_extensions-10.4-py3-none-any.whl.metadata (3.2 kB)
+Collecting async-timeout>=4.0.2 (from redis!=4.0.0,!=4.0.1,>=3->django-redis==5.4.0->-r requirements.txt (line 10))
+  Downloading async_timeout-4.0.3-py3-none-any.whl.metadata (4.2 kB)
+Collecting markdown-it-py>=2.2.0 (from rich>=10.0.0->django-rich==1.8.0->-r requirements.txt (line 11))
+  Downloading markdown_it_py-3.0.0-py3-none-any.whl.metadata (6.9 kB)
+Collecting pycparser (from cffi>=1.12->cryptography>=1.4->social-auth-core==4.5.1->social-auth-core[openidconnect]==4.5.1->-r requirements.txt (line 33))
+  Downloading pycparser-2.21-py2.py3-none-any.whl (118 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 118.7/118.7 kB 5.7 MB/s eta 0:00:00
+Collecting python-dateutil>=2.8.1 (from ghp-import>=1.0->mkdocs>=1.5.3,~=1.5->mkdocs-material==9.4.14->-r requirements.txt (line 24))
+  Downloading python_dateutil-2.8.2-py2.py3-none-any.whl (247 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 247.7/247.7 kB 6.0 MB/s eta 0:00:00
+Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=10.0.0->django-rich==1.8.0->-r requirements.txt (line 11))
+  Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+Downloading bleach-6.1.0-py3-none-any.whl (162 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 162.8/162.8 kB 7.0 MB/s eta 0:00:00
+Downloading Django-4.2.7-py3-none-any.whl (8.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.0/8.0 MB 6.8 MB/s eta 0:00:00
+Downloading django_cors_headers-4.3.1-py3-none-any.whl (12 kB)
+Downloading django_debug_toolbar-4.2.0-py3-none-any.whl (223 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 223.2/223.2 kB 6.9 MB/s eta 0:00:00
+Downloading django_filter-23.4-py3-none-any.whl (94 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 94.3/94.3 kB 5.1 MB/s eta 0:00:00
+Downloading django_redis-5.4.0-py3-none-any.whl (31 kB)
+Downloading django_rich-1.8.0-py3-none-any.whl (7.1 kB)
+Downloading django_rq-2.9.0-py2.py3-none-any.whl (54 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 54.7/54.7 kB 3.5 MB/s eta 0:00:00
+Downloading django_tables2-2.6.0-py2.py3-none-any.whl (95 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 95.2/95.2 kB 5.4 MB/s eta 0:00:00
+Downloading django_timezone_field-6.1.0-py3-none-any.whl (12 kB)
+Downloading drf_spectacular-0.26.5-py3-none-any.whl (94 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 94.1/94.1 kB 5.7 MB/s eta 0:00:00
+Downloading drf_spectacular_sidecar-2023.10.1-py3-none-any.whl (2.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.3/2.3 MB 6.7 MB/s eta 0:00:00
+Downloading gunicorn-21.2.0-py3-none-any.whl (80 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 80.2/80.2 kB 5.0 MB/s eta 0:00:00
+Downloading mkdocs_material-9.4.14-py3-none-any.whl (8.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.4/8.4 MB 6.8 MB/s eta 0:00:00
+Downloading mkdocstrings-0.24.0-py3-none-any.whl (28 kB)
+Downloading netaddr-0.9.0-py3-none-any.whl (2.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.2/2.2 MB 5.6 MB/s eta 0:00:00
+Downloading Pillow-10.1.0-cp310-cp310-manylinux_2_28_x86_64.whl (3.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.6/3.6 MB 6.7 MB/s eta 0:00:00
+Downloading psycopg-3.1.13-py3-none-any.whl (172 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 173.0/173.0 kB 6.2 MB/s eta 0:00:00
+Downloading PyYAML-6.0.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (705 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 705.5/705.5 kB 6.5 MB/s eta 0:00:00
+Downloading requests-2.31.0-py3-none-any.whl (62 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.6/62.6 kB 10.5 MB/s eta 0:00:00
+Downloading sentry_sdk-1.38.0-py2.py3-none-any.whl (252 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 252.8/252.8 kB 6.3 MB/s eta 0:00:00
+Downloading social_auth_app_django-5.4.0-py3-none-any.whl (26 kB)
+Downloading social_auth_core-4.5.1-py3-none-any.whl (406 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 406.7/406.7 kB 6.5 MB/s eta 0:00:00
+Downloading tablib-3.5.0-py3-none-any.whl (45 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 45.5/45.5 kB 7.3 MB/s eta 0:00:00
+Downloading psycopg_binary-3.1.13-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 6.8 MB/s eta 0:00:00
+Downloading asgiref-3.7.2-py3-none-any.whl (24 kB)
+Downloading Babel-2.13.1-py3-none-any.whl (10.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.1/10.1 MB 6.1 MB/s eta 0:00:00
+Downloading certifi-2023.11.17-py3-none-any.whl (162 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 162.5/162.5 kB 6.8 MB/s eta 0:00:00
+Downloading charset_normalizer-3.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (142 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 142.1/142.1 kB 6.7 MB/s eta 0:00:00
+Downloading click-8.1.7-py3-none-any.whl (97 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 97.9/97.9 kB 6.5 MB/s eta 0:00:00
+Downloading cryptography-41.0.7-cp37-abi3-manylinux_2_28_x86_64.whl (4.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.4/4.4 MB 6.6 MB/s eta 0:00:00
+Downloading defusedxml-0.8.0rc2-py2.py3-none-any.whl (25 kB)
+Downloading graphene-3.3-py2.py3-none-any.whl (128 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 128.2/128.2 kB 7.5 MB/s eta 0:00:00
+Downloading idna-3.6-py3-none-any.whl (61 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 61.6/61.6 kB 7.2 MB/s eta 0:00:00
+Downloading jsonschema-4.20.0-py3-none-any.whl (84 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 84.7/84.7 kB 6.2 MB/s eta 0:00:00
+Downloading MarkupSafe-2.1.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (25 kB)
+Downloading mkdocs-1.5.3-py3-none-any.whl (3.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.7/3.7 MB 4.5 MB/s eta 0:00:00
+Downloading mkdocs_autorefs-0.5.0-py3-none-any.whl (9.6 kB)
+Downloading mkdocs_material_extensions-1.3.1-py3-none-any.whl (8.7 kB)
+Downloading packaging-23.2-py3-none-any.whl (53 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 53.0/53.0 kB 2.1 MB/s eta 0:00:00
+Downloading platformdirs-4.1.0-py3-none-any.whl (17 kB)
+Downloading prometheus_client-0.19.0-py3-none-any.whl (54 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 54.2/54.2 kB 3.3 MB/s eta 0:00:00
+Downloading pygments-2.17.2-py3-none-any.whl (1.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 7.2 MB/s eta 0:00:00
+Downloading PyJWT-2.8.0-py3-none-any.whl (22 kB)
+Downloading pymdown_extensions-10.4-py3-none-any.whl (240 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 240.8/240.8 kB 6.7 MB/s eta 0:00:00
+Downloading redis-5.0.1-py3-none-any.whl (250 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 250.3/250.3 kB 6.9 MB/s eta 0:00:00
+Downloading regex-2023.10.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (773 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 773.9/773.9 kB 6.8 MB/s eta 0:00:00
+Downloading rich-13.7.0-py3-none-any.whl (240 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 240.6/240.6 kB 6.7 MB/s eta 0:00:00
+Downloading rq-1.15.1-py2.py3-none-any.whl (95 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 95.8/95.8 kB 6.2 MB/s eta 0:00:00
+Downloading typing_extensions-4.8.0-py3-none-any.whl (31 kB)
+Downloading urllib3-2.1.0-py3-none-any.whl (104 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 104.6/104.6 kB 7.0 MB/s eta 0:00:00
+Downloading django_js_asset-2.1.0-py3-none-any.whl (4.7 kB)
+Downloading psycopg_pool-3.2.0-py3-none-any.whl (37 kB)
+Downloading pytz-2023.3.post1-py2.py3-none-any.whl (502 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 502.5/502.5 kB 6.2 MB/s eta 0:00:00
+Downloading async_timeout-4.0.3-py3-none-any.whl (5.7 kB)
+Downloading cffi-1.16.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (443 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 443.9/443.9 kB 6.6 MB/s eta 0:00:00
+Downloading jsonschema_specifications-2023.11.2-py3-none-any.whl (17 kB)
+Downloading markdown_it_py-3.0.0-py3-none-any.whl (87 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 87.5/87.5 kB 5.3 MB/s eta 0:00:00
+Downloading pathspec-0.11.2-py3-none-any.whl (29 kB)
+Downloading referencing-0.31.1-py3-none-any.whl (25 kB)
+Downloading rpds_py-0.13.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (1.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 6.9 MB/s eta 0:00:00
+Building wheels for collected packages: django-pglocks, paginate, promise, sgmllib3k
+  Building wheel for django-pglocks (setup.py): started
+  Building wheel for django-pglocks (setup.py): finished with status 'done'
+  Created wheel for django-pglocks: filename=django_pglocks-1.0.4-py3-none-any.whl size=3872 sha256=8df6b0fcec046ed882d756746cc94ae9d404838e1a6a47fb8394bd729c674a67
+  Stored in directory: /root/.cache/pip/wheels/19/64/4e/aa14b57f878bfd7cc9894b0aba7789d382f466dabd0d53761c
+  Building wheel for paginate (setup.py): started
+  Building wheel for paginate (setup.py): finished with status 'done'
+  Created wheel for paginate: filename=paginate-0.5.6-py3-none-any.whl size=12892 sha256=82882806fcdc8225ce4e0d2edd7c46039e8269dd6742479aef753073a722661f
+  Stored in directory: /root/.cache/pip/wheels/47/d3/18/0b5bebc873f29bea61fedece1e92cbcbef416839dfe5bd0eef
+  Building wheel for promise (setup.py): started
+  Building wheel for promise (setup.py): finished with status 'done'
+  Created wheel for promise: filename=promise-2.3-py3-none-any.whl size=21499 sha256=a7c7d94b92e2053f664859da4ce8470fdef2c3028a16200b09eb3cf0a4e234fb
+  Stored in directory: /root/.cache/pip/wheels/54/4e/28/3ed0e1c8a752867445bab994d2340724928aa3ab059c57c8db
+  Building wheel for sgmllib3k (setup.py): started
+  Building wheel for sgmllib3k (setup.py): finished with status 'done'
+  Created wheel for sgmllib3k: filename=sgmllib3k-1.0.0-py3-none-any.whl size=6067 sha256=c32e565f5497eef6e28c65dd30677e730e7ff8419393f52f866ba3fa448b3f9d
+  Stored in directory: /root/.cache/pip/wheels/f0/69/93/a47e9d621be168e9e33c7ce60524393c0b92ae83cf6c6e89c5
+Successfully built django-pglocks paginate promise sgmllib3k
+Installing collected packages: webencodings, text-unidecode, sgmllib3k, pytz, paginate, netaddr, aniso8601, watchdog, urllib3, uritemplate, tzdata, typing-extensions, tablib, svgwrite, sqlparse, six, rpds-py, regex, PyYAML, pytkdocs, PyJWT, pygments, pycparser, psycopg-binary, prometheus-client, platformdirs, Pillow, pathspec, packaging, oauthlib, mkdocs-material-extensions, mergedeep, mdurl, MarkupSafe, Markdown, inflection, idna, graphql-core, feedparser, defusedxml, colorama, click, charset-normalizer, certifi, babel, attrs, async-timeout, sentry-sdk, requests, referencing, redis, pyyaml-env-tag, python3-openid, python-dateutil, pymdown-extensions, psycopg-pool, psycopg, promise, markdown-it-py, Jinja2, gunicorn, graphql-relay, django-prometheus, django-pglocks, cffi, bleach, asgiref, rq, rich, requests-oauthlib, jsonschema-specifications, graphene, ghp-import, Django, cryptography, social-auth-core, mkdocs, jsonschema, graphene-django, drf-spectacular-sidecar, djangorestframework, django-timezone-field, django-taggit, django-tables2, django-rq, django-rich, django-redis, django-js-asset, django-filter, django-debug-toolbar, django-cors-headers, social-auth-app-django, mkdocs-material, mkdocs-autorefs, drf-spectacular, django-mptt, django-graphiql-debug-toolbar, mkdocstrings, mkdocstrings-python-legacy
+Successfully installed Django-4.2.7 Jinja2-3.1.2 Markdown-3.3.7 MarkupSafe-2.1.3 Pillow-10.1.0 PyJWT-2.8.0 PyYAML-6.0.1 aniso8601-9.0.1 asgiref-3.7.2 async-timeout-4.0.3 attrs-23.1.0 babel-2.13.1 bleach-6.1.0 certifi-2023.11.17 cffi-1.16.0 charset-normalizer-3.3.2 click-8.1.7 colorama-0.4.6 cryptography-41.0.7 defusedxml-0.8.0rc2 django-cors-headers-4.3.1 django-debug-toolbar-4.2.0 django-filter-23.4 django-graphiql-debug-toolbar-0.2.0 django-js-asset-2.1.0 django-mptt-0.14.0 django-pglocks-1.0.4 django-prometheus-2.3.1 django-redis-5.4.0 django-rich-1.8.0 django-rq-2.9.0 django-tables2-2.6.0 django-taggit-4.0.0 django-timezone-field-6.1.0 djangorestframework-3.14.0 drf-spectacular-0.26.5 drf-spectacular-sidecar-2023.10.1 feedparser-6.0.10 ghp-import-2.1.0 graphene-3.3 graphene-django-3.0.0 graphql-core-3.2.3 graphql-relay-3.2.0 gunicorn-21.2.0 idna-3.6 inflection-0.5.1 jsonschema-4.20.0 jsonschema-specifications-2023.11.2 markdown-it-py-3.0.0 mdurl-0.1.2 mergedeep-1.3.4 mkdocs-1.5.3 mkdocs-autorefs-0.5.0 mkdocs-material-9.4.14 mkdocs-material-extensions-1.3.1 mkdocstrings-0.24.0 mkdocstrings-python-legacy-0.2.3 netaddr-0.9.0 oauthlib-3.2.2 packaging-23.2 paginate-0.5.6 pathspec-0.11.2 platformdirs-4.1.0 prometheus-client-0.19.0 promise-2.3 psycopg-3.1.13 psycopg-binary-3.1.13 psycopg-pool-3.2.0 pycparser-2.21 pygments-2.17.2 pymdown-extensions-10.4 python-dateutil-2.8.2 python3-openid-3.2.0 pytkdocs-0.16.1 pytz-2023.3.post1 pyyaml-env-tag-0.1 redis-5.0.1 referencing-0.31.1 regex-2023.10.3 requests-2.31.0 requests-oauthlib-1.3.1 rich-13.7.0 rpds-py-0.13.2 rq-1.15.1 sentry-sdk-1.38.0 sgmllib3k-1.0.0 six-1.16.0 social-auth-app-django-5.4.0 social-auth-core-4.5.1 sqlparse-0.4.4 svgwrite-1.4.3 tablib-3.5.0 text-unidecode-1.3 typing-extensions-4.8.0 tzdata-2023.3 uritemplate-4.1.1 urllib3-2.1.0 watchdog-3.0.0 webencodings-0.5.1
+Installing local dependencies (pip install -r local_requirements.txt)...
+Collecting napalm (from -r local_requirements.txt (line 1))
+  Downloading napalm-4.1.0-py2.py3-none-any.whl.metadata (9.3 kB)
+Requirement already satisfied: setuptools>=38.4.0 in ./venv/lib/python3.10/site-packages (from napalm->-r local_requirements.txt (line 1)) (59.6.0)
+Requirement already satisfied: cffi>=1.11.3 in ./venv/lib/python3.10/site-packages (from napalm->-r local_requirements.txt (line 1)) (1.16.0)
+Collecting paramiko>=2.6.0 (from napalm->-r local_requirements.txt (line 1))
+  Downloading paramiko-3.3.1-py3-none-any.whl.metadata (4.4 kB)
+Requirement already satisfied: requests>=2.7.0 in ./venv/lib/python3.10/site-packages (from napalm->-r local_requirements.txt (line 1)) (2.31.0)
+Collecting future (from napalm->-r local_requirements.txt (line 1))
+  Downloading future-0.18.3.tar.gz (840 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 840.9/840.9 kB 5.5 MB/s eta 0:00:00
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Collecting textfsm (from napalm->-r local_requirements.txt (line 1))
+  Downloading textfsm-1.1.3-py2.py3-none-any.whl (44 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.7/44.7 kB 3.9 MB/s eta 0:00:00
+Requirement already satisfied: jinja2 in ./venv/lib/python3.10/site-packages (from napalm->-r local_requirements.txt (line 1)) (3.1.2)
+Requirement already satisfied: netaddr in ./venv/lib/python3.10/site-packages (from napalm->-r local_requirements.txt (line 1)) (0.9.0)
+Requirement already satisfied: pyYAML in ./venv/lib/python3.10/site-packages (from napalm->-r local_requirements.txt (line 1)) (6.0.1)
+Collecting pyeapi>=0.8.2 (from napalm->-r local_requirements.txt (line 1))
+  Downloading pyeapi-1.0.2.tar.gz (146 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 146.9/146.9 kB 6.9 MB/s eta 0:00:00
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Collecting netmiko>=4.1.0 (from napalm->-r local_requirements.txt (line 1))
+  Downloading netmiko-4.3.0-py3-none-any.whl.metadata (7.6 kB)
+Collecting junos-eznc>=2.6.3 (from napalm->-r local_requirements.txt (line 1))
+  Downloading junos_eznc-2.6.8-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting scp (from napalm->-r local_requirements.txt (line 1))
+  Downloading scp-0.14.5-py2.py3-none-any.whl (8.7 kB)
+Collecting lxml>=4.3.0 (from napalm->-r local_requirements.txt (line 1))
+  Downloading lxml-4.9.3-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (3.8 kB)
+Collecting ncclient (from napalm->-r local_requirements.txt (line 1))
+  Downloading ncclient-0.6.15.tar.gz (634 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 634.9/634.9 kB 6.9 MB/s eta 0:00:00
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Collecting ttp (from napalm->-r local_requirements.txt (line 1))
+  Downloading ttp-0.9.5-py2.py3-none-any.whl.metadata (9.6 kB)
+Collecting ttp-templates (from napalm->-r local_requirements.txt (line 1))
+  Downloading ttp_templates-0.3.5-py3-none-any.whl (72 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 72.1/72.1 kB 3.8 MB/s eta 0:00:00
+Collecting netutils>=1.0.0 (from napalm->-r local_requirements.txt (line 1))
+  Downloading netutils-1.6.0-py3-none-any.whl.metadata (4.0 kB)
+Requirement already satisfied: typing-extensions>=4.3.0 in ./venv/lib/python3.10/site-packages (from napalm->-r local_requirements.txt (line 1)) (4.8.0)
+Requirement already satisfied: pycparser in ./venv/lib/python3.10/site-packages (from cffi>=1.11.3->napalm->-r local_requirements.txt (line 1)) (2.21)
+Collecting ncclient (from napalm->-r local_requirements.txt (line 1))
+  Downloading ncclient-0.6.13.tar.gz (105 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 105.7/105.7 kB 6.2 MB/s eta 0:00:00
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: six in ./venv/lib/python3.10/site-packages (from junos-eznc>=2.6.3->napalm->-r local_requirements.txt (line 1)) (1.16.0)
+Collecting pyserial (from junos-eznc>=2.6.3->napalm->-r local_requirements.txt (line 1))
+  Downloading pyserial-3.5-py2.py3-none-any.whl (90 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 90.6/90.6 kB 7.0 MB/s eta 0:00:00
+Collecting yamlordereddictloader (from junos-eznc>=2.6.3->napalm->-r local_requirements.txt (line 1))
+  Downloading yamlordereddictloader-0.4.2-py3-none-any.whl.metadata (3.8 kB)
+Collecting pyparsing (from junos-eznc>=2.6.3->napalm->-r local_requirements.txt (line 1))
+  Downloading pyparsing-3.1.1-py3-none-any.whl.metadata (5.1 kB)
+Collecting transitions (from junos-eznc>=2.6.3->napalm->-r local_requirements.txt (line 1))
+  Downloading transitions-0.9.0-py2.py3-none-any.whl (97 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 97.7/97.7 kB 6.8 MB/s eta 0:00:00
+Requirement already satisfied: MarkupSafe>=2.0 in ./venv/lib/python3.10/site-packages (from jinja2->napalm->-r local_requirements.txt (line 1)) (2.1.3)
+Collecting ntc-templates>=2.0.0 (from netmiko>=4.1.0->napalm->-r local_requirements.txt (line 1))
+  Downloading ntc_templates-4.0.1-py3-none-any.whl.metadata (3.9 kB)
+Collecting bcrypt>=3.2 (from paramiko>=2.6.0->napalm->-r local_requirements.txt (line 1))
+  Downloading bcrypt-4.1.1-cp37-abi3-manylinux_2_28_x86_64.whl.metadata (9.2 kB)
+Requirement already satisfied: cryptography>=3.3 in ./venv/lib/python3.10/site-packages (from paramiko>=2.6.0->napalm->-r local_requirements.txt (line 1)) (41.0.7)
+Collecting pynacl>=1.5 (from paramiko>=2.6.0->napalm->-r local_requirements.txt (line 1))
+  Downloading PyNaCl-1.5.0-cp36-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_24_x86_64.whl (856 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 856.7/856.7 kB 6.6 MB/s eta 0:00:00
+Requirement already satisfied: charset-normalizer<4,>=2 in ./venv/lib/python3.10/site-packages (from requests>=2.7.0->napalm->-r local_requirements.txt (line 1)) (3.3.2)
+Requirement already satisfied: idna<4,>=2.5 in ./venv/lib/python3.10/site-packages (from requests>=2.7.0->napalm->-r local_requirements.txt (line 1)) (3.6)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./venv/lib/python3.10/site-packages (from requests>=2.7.0->napalm->-r local_requirements.txt (line 1)) (2.1.0)
+Requirement already satisfied: certifi>=2017.4.17 in ./venv/lib/python3.10/site-packages (from requests>=2.7.0->napalm->-r local_requirements.txt (line 1)) (2023.11.17)
+Downloading napalm-4.1.0-py2.py3-none-any.whl (267 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 267.7/267.7 kB 6.3 MB/s eta 0:00:00
+Downloading junos_eznc-2.6.8-py2.py3-none-any.whl (198 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 198.0/198.0 kB 4.9 MB/s eta 0:00:00
+Downloading lxml-4.9.3-cp310-cp310-manylinux_2_28_x86_64.whl (7.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.9/7.9 MB 6.5 MB/s eta 0:00:00
+Downloading netmiko-4.3.0-py3-none-any.whl (219 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 219.2/219.2 kB 5.4 MB/s eta 0:00:00
+Downloading netutils-1.6.0-py3-none-any.whl (481 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 481.3/481.3 kB 6.6 MB/s eta 0:00:00
+Downloading paramiko-3.3.1-py3-none-any.whl (224 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 224.8/224.8 kB 6.7 MB/s eta 0:00:00
+Downloading ttp-0.9.5-py2.py3-none-any.whl (85 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 85.8/85.8 kB 7.8 MB/s eta 0:00:00
+Downloading bcrypt-4.1.1-cp37-abi3-manylinux_2_28_x86_64.whl (699 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 699.4/699.4 kB 6.5 MB/s eta 0:00:00
+Downloading ntc_templates-4.0.1-py3-none-any.whl (385 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 385.5/385.5 kB 6.8 MB/s eta 0:00:00
+Downloading pyparsing-3.1.1-py3-none-any.whl (103 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 103.1/103.1 kB 7.6 MB/s eta 0:00:00
+Downloading yamlordereddictloader-0.4.2-py3-none-any.whl (4.2 kB)
+Building wheels for collected packages: ncclient, pyeapi, future
+  Building wheel for ncclient (setup.py): started
+  Building wheel for ncclient (setup.py): finished with status 'done'
+  Created wheel for ncclient: filename=ncclient-0.6.13-py2.py3-none-any.whl size=84642 sha256=471c1decbce998a45709f7813915b0ee8430fd14756f73f5202789ae75f5e0f1
+  Stored in directory: /root/.cache/pip/wheels/86/9b/b4/27799df81d6faea66359dfb4843c099c8d486e2f064cbf9d5f
+  Building wheel for pyeapi (setup.py): started
+  Building wheel for pyeapi (setup.py): finished with status 'done'
+  Created wheel for pyeapi: filename=pyeapi-1.0.2-py3-none-any.whl size=93958 sha256=d6c6d17862df9e2b5b738f40aa7eace6115dc2209e8a02dad92130bccaad6e6e
+  Stored in directory: /root/.cache/pip/wheels/a6/28/8b/5aceb3342f34626bf67e3754b53f34b82fd021b6cbc0efbf30
+  Building wheel for future (setup.py): started
+  Building wheel for future (setup.py): finished with status 'done'
+  Created wheel for future: filename=future-0.18.3-py3-none-any.whl size=492037 sha256=d2fb0d1df507924d7602c7f3e70c03ef979045182945469184fc73cbac2ad31c
+  Stored in directory: /root/.cache/pip/wheels/5e/a9/47/f118e66afd12240e4662752cc22cefae5d97275623aa8ef57d
+Successfully built ncclient pyeapi future
+Installing collected packages: pyserial, yamlordereddictloader, ttp, transitions, pyparsing, pyeapi, netutils, lxml, future, bcrypt, ttp-templates, textfsm, pynacl, paramiko, ntc-templates, scp, ncclient, netmiko, junos-eznc, napalm
+Successfully installed bcrypt-4.1.1 future-0.18.3 junos-eznc-2.6.8 lxml-4.9.3 napalm-4.1.0 ncclient-0.6.13 netmiko-4.3.0 netutils-1.6.0 ntc-templates-4.0.1 paramiko-3.3.1 pyeapi-1.0.2 pynacl-1.5.0 pyparsing-3.1.1 pyserial-3.5 scp-0.14.5 textfsm-1.1.3 transitions-0.9.0 ttp-0.9.5 ttp-templates-0.3.5 yamlordereddictloader-0.4.2
+Applying database migrations (python3 netbox/manage.py migrate)...
+Operations to perform:
+  Apply all migrations: account, admin, auth, circuits, contenttypes, core, dcim, django_rq, extras, ipam, sessions, social_django, taggit, tenancy, users, virtualization, wireless
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying users.0001_squashed_0011... OK
+  Applying extras.0001_squashed... OK
+  Applying tenancy.0001_squashed_0012... OK
+  Applying tenancy.0002_tenant_ordering... OK
+  Applying dcim.0001_squashed... OK
+  Applying dcim.0002_squashed... OK
+  Applying ipam.0001_squashed... OK
+  Applying virtualization.0001_squashed_0022... OK
+  Applying extras.0002_squashed_0059... OK
+  Applying extras.0060_customlink_button_class... OK
+  Applying extras.0061_extras_change_logging... OK
+  Applying extras.0062_clear_secrets_changelog... OK
+  Applying tenancy.0003_contacts... OK
+  Applying tenancy.0004_extend_tag_support... OK
+  Applying dcim.0003_squashed_0130... OK
+  Applying ipam.0002_squashed_0046... OK
+  Applying ipam.0047_prefix_depth_children... OK
+  Applying ipam.0048_prefix_populate_depth_children...
+Updating 0 prefixes...
+ OK
+  Applying ipam.0049_prefix_mark_utilized... OK
+  Applying ipam.0050_iprange... OK
+  Applying ipam.0051_extend_tag_support... OK
+  Applying extras.0063_webhook_conditions... OK
+  Applying extras.0064_configrevision... OK
+  Applying ipam.0052_fhrpgroup... OK
+  Applying ipam.0053_asn_model... OK
+  Applying dcim.0131_consoleport_speed... OK
+  Applying dcim.0132_cable_length... OK
+  Applying dcim.0133_port_colors... OK
+  Applying dcim.0134_interface_wwn_bridge... OK
+  Applying dcim.0135_tenancy_extensions... OK
+  Applying dcim.0136_device_airflow... OK
+  Applying dcim.0137_relax_uniqueness_constraints... OK
+  Applying dcim.0138_extend_tag_support... OK
+  Applying dcim.0139_rename_cable_peer... OK
+  Applying wireless.0001_wireless... OK
+  Applying dcim.0140_wireless... OK
+  Applying dcim.0141_asn_model... OK
+  Applying dcim.0142_rename_128gfc_qsfp28... OK
+  Applying dcim.0143_remove_primary_for_related_name... OK
+  Applying dcim.0144_fix_cable_abs_length... OK
+  Applying dcim.0145_site_remove_deprecated_fields... OK
+  Applying users.0002_standardize_id_fields... OK
+  Applying users.0003_token_allowed_ips_last_used... OK
+  Applying users.0004_netboxgroup_netboxuser... OK
+  Applying account.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying wireless.0002_standardize_id_fields... OK
+  Applying wireless.0003_created_datetimefield... OK
+  Applying tenancy.0005_standardize_id_fields... OK
+  Applying tenancy.0006_created_datetimefield... OK
+  Applying tenancy.0007_contact_link... OK
+  Applying wireless.0004_wireless_tenancy... OK
+  Applying ipam.0054_vlangroup_min_max_vids... OK
+  Applying virtualization.0023_virtualmachine_natural_ordering... OK
+  Applying virtualization.0024_cluster_relax_uniqueness... OK
+  Applying virtualization.0025_extend_tag_support... OK
+  Applying virtualization.0026_vminterface_bridge... OK
+  Applying extras.0065_imageattachment_change_logging... OK
+  Applying extras.0066_customfield_name_validation... OK
+  Applying extras.0067_customfield_min_max_values... OK
+  Applying extras.0068_configcontext_cluster_types... OK
+  Applying dcim.0146_modules... OK
+  Applying dcim.0147_inventoryitemrole... OK
+  Applying dcim.0148_inventoryitem_component... OK
+  Applying dcim.0149_inventoryitem_templates... OK
+  Applying dcim.0150_interface_vrf... OK
+  Applying dcim.0151_interface_speed_duplex... OK
+  Applying dcim.0152_standardize_id_fields... OK
+  Applying dcim.0153_created_datetimefield... OK
+  Applying dcim.0154_half_height_rack_units... OK
+  Applying dcim.0155_interface_poe_mode_type... OK
+  Applying dcim.0156_location_status... OK
+  Applying dcim.0157_new_cabling_models... OK
+  Applying dcim.0158_populate_cable_terminations... OK
+  Applying dcim.0159_populate_cable_paths... OK
+  Applying extras.0069_custom_object_field... OK
+  Applying extras.0070_customlink_enabled... OK
+  Applying ipam.0055_servicetemplate... OK
+  Applying ipam.0056_standardize_id_fields... OK
+  Applying ipam.0057_created_datetimefield... OK
+  Applying circuits.0001_squashed... OK
+  Applying circuits.0002_squashed_0029... OK
+  Applying circuits.0003_extend_tag_support... OK
+  Applying circuits.0004_rename_cable_peer... OK
+  Applying circuits.0032_provider_service_id... OK
+  Applying circuits.0033_standardize_id_fields... OK
+  Applying circuits.0034_created_datetimefield... OK
+  Applying circuits.0035_provider_asns... OK
+  Applying circuits.0036_circuit_termination_date_tags_custom_fields... OK
+  Applying circuits.0037_new_cabling_models... OK
+  Applying dcim.0160_populate_cable_ends... OK
+  Applying dcim.0161_cabling_cleanup... OK
+  Applying wireless.0005_wirelesslink_interface_types... OK
+  Applying wireless.0006_unique_constraints... OK
+  Applying wireless.0007_standardize_description_comments... OK
+  Applying wireless.0008_wirelesslan_status... OK
+  Applying virtualization.0027_standardize_id_fields... OK
+  Applying virtualization.0028_vminterface_vrf... OK
+  Applying virtualization.0029_created_datetimefield... OK
+  Applying virtualization.0030_cluster_status... OK
+  Applying virtualization.0031_virtualmachine_site_device... OK
+  Applying virtualization.0032_virtualmachine_update_sites... OK
+  Applying virtualization.0033_unique_constraints... OK
+  Applying virtualization.0034_standardize_description_comments... OK
+  Applying tenancy.0008_unique_constraints... OK
+  Applying tenancy.0009_standardize_description_comments... OK
+  Applying ipam.0058_ipaddress_nat_inside_nonunique... OK
+  Applying extras.0071_standardize_id_fields... OK
+  Applying extras.0072_created_datetimefield... OK
+  Applying extras.0073_journalentry_tags_custom_fields... OK
+  Applying extras.0074_customfield_extensions... OK
+  Applying extras.0075_configcontext_locations... OK
+  Applying ipam.0059_l2vpn... OK
+  Applying ipam.0060_alter_l2vpn_slug... OK
+  Applying ipam.0061_fhrpgroup_name... OK
+  Applying ipam.0062_unique_constraints... OK
+  Applying ipam.0063_standardize_description_comments... OK
+  Applying extras.0076_tag_slug_unicode... OK
+  Applying extras.0077_customlink_extend_text_and_url... OK
+  Applying extras.0078_unique_constraints... OK
+  Applying extras.0079_scheduled_jobs... OK
+  Applying extras.0080_customlink_content_types... OK
+  Applying extras.0081_exporttemplate_content_types... OK
+  Applying extras.0082_savedfilter... OK
+  Applying dcim.0162_unique_constraints... OK
+  Applying dcim.0163_weight_fields... OK
+  Applying dcim.0164_rack_mounting_depth... OK
+  Applying dcim.0165_standardize_description_comments... OK
+  Applying dcim.0166_virtualdevicecontext... OK
+  Applying circuits.0038_cabling_cleanup... OK
+  Applying circuits.0039_unique_constraints... OK
+  Applying circuits.0040_provider_remove_deprecated_fields... OK
+  Applying circuits.0041_standardize_description_comments... OK
+  Applying extras.0083_search... OK
+  Applying extras.0084_staging... OK
+  Applying circuits.0042_provideraccount... OK
+  Applying core.0001_initial... OK
+  Applying core.0002_managedfile... OK
+  Applying core.0003_job... OK
+  Applying core.0004_replicate_jobresults... OK
+  Applying core.0005_job_created_auto_now... OK
+  Applying tenancy.0010_tenant_relax_uniqueness... OK
+  Applying ipam.0064_clear_search_cache... OK
+  Applying extras.0085_synced_data... OK
+  Applying extras.0086_configtemplate... OK
+  Applying extras.0087_dashboard... OK
+  Applying ipam.0065_asnrange... OK
+  Applying ipam.0066_iprange_mark_utilized... OK
+  Applying dcim.0167_module_status... OK
+  Applying dcim.0168_interface_template_enabled... OK
+  Applying dcim.0169_devicetype_default_platform... OK
+  Applying dcim.0170_configtemplate... OK
+  Applying dcim.0171_cabletermination_change_logging... OK
+  Applying dcim.0172_larger_power_draw_values... OK
+  Applying dcim.0173_remove_napalm_fields... OK
+  Applying dcim.0174_device_latitude_device_longitude... OK
+  Applying dcim.0174_rack_starting_unit... OK
+  Applying dcim.0175_device_oob_ip... OK
+  Applying dcim.0176_device_component_counters... OK
+  Applying dcim.0177_devicetype_component_counters... OK
+  Applying dcim.0178_virtual_chassis_member_counter... OK
+  Applying dcim.0179_interfacetemplate_rf_role... OK
+  Applying dcim.0180_powerfeed_tenant... OK
+  Applying dcim.0181_rename_device_role_device_role... OK
+  Applying django_rq.0001_initial... OK
+  Applying extras.0088_jobresult_webhooks... OK
+  Applying extras.0089_customfield_is_cloneable... OK
+  Applying extras.0090_objectchange_index_request_id... OK
+  Applying extras.0091_create_managedfiles... OK
+  Applying extras.0092_delete_jobresult... OK
+  Applying extras.0093_configrevision_ordering... OK
+  Applying extras.0094_tag_object_types... OK
+  Applying extras.0095_bookmarks... OK
+  Applying extras.0096_customfieldchoiceset... OK
+  Applying extras.0097_customfield_remove_choices... OK
+  Applying extras.0098_webhook_custom_field_data_webhook_tags... OK
+  Applying ipam.0067_ipaddress_index_host... OK
+  Applying sessions.0001_initial... OK
+  Applying social_django.0001_initial... OK
+  Applying social_django.0002_add_related_name... OK
+  Applying social_django.0003_alter_email_max_length... OK
+  Applying social_django.0004_auto_20160423_0400... OK
+  Applying social_django.0005_auto_20160727_2333... OK
+  Applying social_django.0006_partial... OK
+  Applying social_django.0007_code_timestamp... OK
+  Applying social_django.0008_partial_timestamp... OK
+  Applying social_django.0009_auto_20191118_0520... OK
+  Applying social_django.0010_uid_db_index... OK
+  Applying social_django.0011_alter_id_fields... OK
+  Applying social_django.0012_usersocialauth_extra_data_new... OK
+  Applying social_django.0013_migrate_extra_data... OK
+  Applying social_django.0014_remove_usersocialauth_extra_data... OK
+  Applying social_django.0015_rename_extra_data_new_usersocialauth_extra_data... OK
+  Applying taggit.0001_initial... OK
+  Applying taggit.0002_auto_20150616_2121... OK
+  Applying taggit.0003_taggeditem_add_unique_index... OK
+  Applying taggit.0004_alter_taggeditem_content_type_alter_taggeditem_tag... OK
+  Applying taggit.0005_auto_20220424_2025... OK
+  Applying tenancy.0011_contactassignment_tags... OK
+  Applying virtualization.0035_virtualmachine_interface_count... OK
+  Applying virtualization.0036_virtualmachine_config_template... OK
+Checking for missing cable paths (python3 netbox/manage.py trace_paths --no-input)...
+Found no missing console port paths; skipping
+Found no missing console server port paths; skipping
+Found no missing interface paths; skipping
+Found no missing power feed paths; skipping
+Found no missing power outlet paths; skipping
+Found no missing power port paths; skipping
+Finished.
+Building documentation (mkdocs build)...
+Collecting static files (python3 netbox/manage.py collectstatic --no-input)...
+
+516 static files copied to '/opt/netbox/netbox/static'.
+Removing stale content types (python3 netbox/manage.py remove_stale_contenttypes --no-input)...
+Rebuilding search cache (python3 netbox/manage.py reindex --lazy)...
+Reindexing 66 models.
+Indexing models
+  core.datasource... No objects found.
+  core.datafile... No objects found.
+  circuits.circuit... No objects found.
+  circuits.circuittermination... No objects found.
+  circuits.circuittype... No objects found.
+  circuits.provider... No objects found.
+  circuits.providernetwork... No objects found.
+  dcim.cable... No objects found.
+  dcim.consoleport... No objects found.
+  dcim.consoleserverport... No objects found.
+  dcim.device... No objects found.
+  dcim.devicebay... No objects found.
+  dcim.devicerole... No objects found.
+  dcim.devicetype... No objects found.
+  dcim.frontport... No objects found.
+  dcim.interface... No objects found.
+  dcim.inventoryitem... No objects found.
+  dcim.location... No objects found.
+  dcim.manufacturer... No objects found.
+  dcim.module... No objects found.
+  dcim.modulebay... No objects found.
+  dcim.moduletype... No objects found.
+  dcim.platform... No objects found.
+  dcim.powerfeed... No objects found.
+  dcim.poweroutlet... No objects found.
+  dcim.powerpanel... No objects found.
+  dcim.powerport... No objects found.
+  dcim.rack... No objects found.
+  dcim.rackreservation... No objects found.
+  dcim.rackrole... No objects found.
+  dcim.rearport... No objects found.
+  dcim.region... No objects found.
+  dcim.site... No objects found.
+  dcim.sitegroup... No objects found.
+  dcim.virtualchassis... No objects found.
+  dcim.virtualdevicecontext... No objects found.
+  ipam.aggregate... No objects found.
+  ipam.asn... No objects found.
+  ipam.asnrange... No objects found.
+  ipam.fhrpgroup... No objects found.
+  ipam.ipaddress... No objects found.
+  ipam.iprange... No objects found.
+  ipam.l2vpn... No objects found.
+  ipam.prefix... No objects found.
+  ipam.rir... No objects found.
+  ipam.role... No objects found.
+  ipam.routetarget... No objects found.
+  ipam.service... No objects found.
+  ipam.servicetemplate... No objects found.
+  ipam.vlan... No objects found.
+  ipam.vlangroup... No objects found.
+  ipam.vrf... No objects found.
+  extras.journalentry... No objects found.
+  tenancy.contact... No objects found.
+  tenancy.contactgroup... No objects found.
+  tenancy.contactrole... No objects found.
+  tenancy.tenant... No objects found.
+  tenancy.tenantgroup... No objects found.
+  virtualization.cluster... No objects found.
+  virtualization.clustergroup... No objects found.
+  virtualization.clustertype... No objects found.
+  virtualization.virtualmachine... No objects found.
+  virtualization.vminterface... No objects found.
+  wireless.wirelesslan... No objects found.
+  wireless.wirelesslangroup... No objects found.
+  wireless.wirelesslink... No objects found.
+Completed.
+Removing expired user sessions (python3 netbox/manage.py clearsessions)...
+Clearing the cache (python3 netbox/manage.py clearcache)...
+Cache has been cleared.
+--------------------------------------------------------------------
+WARNING: No existing virtual environment was detected. A new one has
+been created. Update your systemd service files to reflect the new
+Python and gunicorn executables. (If this is a new installation,
+this warning can be ignored.)
+
+netbox.service ExecStart:
+  /opt/netbox/venv/bin/gunicorn
+
+netbox-rq.service ExecStart:
+  /opt/netbox/venv/bin/python
+
+After modifying these files, reload the systemctl daemon:
+  > systemctl daemon-reload
+--------------------------------------------------------------------
+Upgrade complete! Don't forget to restart the NetBox services:
+  > sudo systemctl restart netbox netbox-rq
+Command executed successfully: sudo /opt/netbox/upgrade.sh
+# 13. Activating the virtual environment...
+/bin/sh: 1: source: not found
+#14. Define the command to create a superuser.
+Error creating superuser: python3: can't open file '/opt/netbox/netbox/netbox/manage.py': [Errno 2] No such file or directory
+
+#15. Define the path to the settings.py file.
+#16. Define the new ALLOWED_HOSTS line.
+#17. Iterate through the lines and update ALLOWED_HOSTS.
+#18. Write the modified content back to settings.py.
+ALLOWED_HOSTS updated successfully.
+#19. Command to copy the gunicorn.py file.
+gunicorn.py file copied successfully.
+#20. Commands to copy .service files, reload systemd, start, and enable NetBox services.
+'/opt/netbox/contrib/netbox-housekeeping.service' -> '/etc/systemd/system/netbox-housekeeping.service'
+'/opt/netbox/contrib/netbox-rq.service' -> '/etc/systemd/system/netbox-rq.service'
+'/opt/netbox/contrib/netbox.service' -> '/etc/systemd/system/netbox.service'
+Service files copied successfully.
+Systemd reloaded successfully.
+NetBox services started successfully.
+Created symlink /etc/systemd/system/multi-user.target.wants/netbox.service → /etc/systemd/system/netbox.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/netbox-rq.service → /etc/systemd/system/netbox-rq.service.
+NetBox services enabled successfully.
+#21. Create a local SSL certificate and define the openssl command with default values for prompts.
+Local SSL certificate created successfully.
+#22. Install Nginx.
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following packages were automatically installed and are no longer required:
+  acpi-support acpid aisleriot apt-config-icons-hidpi apturl apturl-common baobab bluez-cups branding-ubuntu cheese dc deja-dup dmz-cursor-theme duplicity eog file-roller fonts-beng fonts-beng-extra fonts-deva
+  fonts-deva-extra fonts-gargi fonts-gubbi fonts-gujr fonts-gujr-extra fonts-guru fonts-guru-extra fonts-indic fonts-kacst fonts-kacst-one fonts-kalapi fonts-khmeros-core fonts-knda fonts-lao fonts-lklug-sinhala
+  fonts-lohit-beng-assamese fonts-lohit-beng-bengali fonts-lohit-deva fonts-lohit-gujr fonts-lohit-guru fonts-lohit-knda fonts-lohit-mlym fonts-lohit-orya fonts-lohit-taml fonts-lohit-taml-classical fonts-lohit-telu
+  fonts-mlym fonts-nakula fonts-navilu fonts-noto-cjk fonts-noto-color-emoji fonts-opensymbol fonts-orya fonts-orya-extra fonts-pagul fonts-sahadeva fonts-samyak-deva fonts-samyak-gujr fonts-samyak-mlym
+  fonts-samyak-taml fonts-sarai fonts-sil-abyssinica fonts-sil-padauk fonts-smc fonts-smc-anjalioldlipi fonts-smc-chilanka fonts-smc-dyuthi fonts-smc-gayathri fonts-smc-karumbi fonts-smc-keraleeyam fonts-smc-manjari
+  fonts-smc-meera fonts-smc-rachana fonts-smc-raghumalayalamsans fonts-smc-suruma fonts-smc-uroob fonts-taml fonts-telu fonts-telu-extra fonts-teluguvijayam fonts-thai-tlwg fonts-tibetan-machine fonts-tlwg-garuda
+  fonts-tlwg-garuda-ttf fonts-tlwg-kinnari fonts-tlwg-kinnari-ttf fonts-tlwg-laksaman fonts-tlwg-laksaman-ttf fonts-tlwg-loma fonts-tlwg-loma-ttf fonts-tlwg-mono fonts-tlwg-mono-ttf fonts-tlwg-norasi
+  fonts-tlwg-norasi-ttf fonts-tlwg-purisa fonts-tlwg-purisa-ttf fonts-tlwg-sawasdee fonts-tlwg-sawasdee-ttf fonts-tlwg-typewriter fonts-tlwg-typewriter-ttf fonts-tlwg-typist fonts-tlwg-typist-ttf fonts-tlwg-typo
+  fonts-tlwg-typo-ttf fonts-tlwg-umpush fonts-tlwg-umpush-ttf fonts-tlwg-waree fonts-tlwg-waree-ttf fonts-yrsa-rasa fwupd fwupd-signed gamemode gamemode-daemon genisoimage gir1.2-gmenu-3.0
+  gir1.2-gst-plugins-base-1.0 gir1.2-gudev-1.0 gir1.2-rb-3.0 gir1.2-totem-1.0 gir1.2-totemplparser-1.0 gir1.2-udisks-2.0 gjs gnome-accessibility-themes gnome-bluetooth gnome-calculator gnome-calendar
+  gnome-characters gnome-disk-utility gnome-font-viewer gnome-initial-setup gnome-logs gnome-mahjongg gnome-mines gnome-power-manager gnome-session-canberra gnome-shell-extension-appindicator
+  gnome-shell-extension-desktop-icons-ng gnome-shell-extension-ubuntu-dock gnome-sudoku gnome-system-monitor gnome-themes-extra gnome-themes-extra-data gnome-todo gnome-todo-common gnome-video-effects
+  grilo-plugins-0.3-base gsettings-ubuntu-schemas gstreamer1.0-gtk3 gstreamer1.0-packagekit gstreamer1.0-plugins-base-apps gtk2-engines-murrine gtk2-engines-pixbuf guile-2.2-libs gvfs-fuse ibus-table inputattach
+  kerneloops libabw-0.1-1 libatkmm-1.6-1v5 libavahi-ui-gtk3-0 libboost-filesystem1.74.0 libboost-iostreams1.74.0 libboost-locale1.74.0 libboost-thread1.74.0 libcairomm-1.0-1v5 libcdr-0.1-1 libclucene-contribs1v5
+  libclucene-core1v5 libcolamd2 libcue2 libcupsimage2 libdazzle-1.0-0 libdazzle-common libdmapsharing-3.0-2 libe-book-0.1-1 libeot0 libepubgen-0.1-1 libetonyek-0.1-1 libevent-2.1-7 libexempi8 libexiv2-27
+  libexttextcat-2.0-0 libexttextcat-data libfreehand-0.1-1 libfwupd2 libfwupdplugin5 libgamemode0 libgamemodeauto0 libgcab-1.0-0 libgexiv2-2 libglibmm-2.4-1v5 libglu1-mesa libgnome-games-support-1-3
+  libgnome-games-support-common libgnome-menu-3-0 libgnome-todo libgom-1.0-0 libgpgmepp6 libgpod-common libgpod4 libgrilo-0.3-0 libgsf-1-114 libgsf-1-common libgtkmm-3.0-1v5 libjcat1 liblangtag-common liblangtag1
+  liblirc-client0 liblua5.3-0 libmessaging-menu0 libmhash2 libminiupnpc17 libmspub-0.1-1 libmwaw-0.3-3 libmythes-1.2-0 libnatpmp1 libodfgen-0.1-1 libopengl0 liborcus-0.17-0 liborcus-parser-0.17-0 libpagemaker-0.0-0
+  libpangomm-1.4-1v5 libproxy1-plugin-gsettings libproxy1-plugin-networkmanager libqqwing2v5 libraptor2-0 librasqal3 libraw20 librdf0 libreoffice-base-core libreoffice-calc libreoffice-common libreoffice-core
+  libreoffice-draw libreoffice-gnome libreoffice-gtk3 libreoffice-impress libreoffice-math libreoffice-pdfimport libreoffice-style-breeze libreoffice-style-colibre libreoffice-style-elementary libreoffice-style-yaru
+  libreoffice-writer librevenge-0.0-0 librhythmbox-core10 librsync2 libsigc++-2.0-0v5 libsmbios-c2 libsuitesparseconfig5 libsysmetrics1 libtotem-plparser-common libtotem-plparser18 libtotem0 libtracker-sparql-3.0-0
+  libu2f-udev libuno-cppu3 libuno-cppuhelpergcc3-3 libuno-purpenvhelpergcc3-3 libuno-sal3 libuno-salhelpergcc3-3 libvisio-0.1-1 libvncclient1 libwmf-0.2-7 libwmf-0.2-7-gtk libwmf0.2-7-gtk libwpd-0.10-10 libwpg-0.3-3
+  libwps-0.4-4 libxmlsec1 libxmlsec1-nss libyajl2 lp-solve media-player-info memtest86+ mousetweaks mscompress nautilus nautilus-data nautilus-share network-manager-config-connectivity-ubuntu pcmciautils
+  policykit-desktop-privileges printer-driver-brlaser printer-driver-c2esp printer-driver-foo2zjs printer-driver-foo2zjs-common printer-driver-m2300w printer-driver-min12xxw printer-driver-pnm2ppa
+  printer-driver-ptouch printer-driver-pxljr printer-driver-sag-gdi printer-driver-splix python3-bcrypt python3-fasteners python3-future python3-lockfile python3-mako python3-monotonic python3-paramiko python3-uno
+  remmina remmina-common remmina-plugin-rdp remmina-plugin-secret remmina-plugin-vnc rfkill rhythmbox rhythmbox-data rhythmbox-plugin-alternative-toolbar rhythmbox-plugins sbsigntool seahorse secureboot-db shotwell
+  shotwell-common simple-scan spice-vdagent systemd-oomd thunderbird thunderbird-gnome-support totem totem-common totem-plugins tracker tracker-extract tracker-miner-fs transmission-common transmission-gtk
+  ubuntu-report ubuntu-settings uno-libs-private ure usb-creator-common usb-creator-gtk x11-apps x11-session-utils xbitmaps xcursor-themes xdg-user-dirs-gtk xinit xorg yaru-theme-gtk yaru-theme-icon yaru-theme-sound
+Use 'sudo apt autoremove' to remove them.
+The following additional packages will be installed:
+  libnginx-mod-http-geoip2 libnginx-mod-http-image-filter libnginx-mod-http-xslt-filter libnginx-mod-mail libnginx-mod-stream libnginx-mod-stream-geoip2 nginx-common nginx-core
+Suggested packages:
+  fcgiwrap nginx-doc
+The following NEW packages will be installed:
+  libnginx-mod-http-geoip2 libnginx-mod-http-image-filter libnginx-mod-http-xslt-filter libnginx-mod-mail libnginx-mod-stream libnginx-mod-stream-geoip2 nginx nginx-common nginx-core
+0 upgraded, 9 newly installed, 0 to remove and 125 not upgraded.
+Need to get 697 kB of archives.
+After this operation, 2395 kB of additional disk space will be used.
+Get:1 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 nginx-common all 1.18.0-6ubuntu14.4 [40.0 kB]
+Get:2 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libnginx-mod-http-geoip2 amd64 1.18.0-6ubuntu14.4 [11.9 kB]
+Get:3 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libnginx-mod-http-image-filter amd64 1.18.0-6ubuntu14.4 [15.4 kB]
+Get:4 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libnginx-mod-http-xslt-filter amd64 1.18.0-6ubuntu14.4 [13.7 kB]
+Get:5 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libnginx-mod-mail amd64 1.18.0-6ubuntu14.4 [45.7 kB]
+Get:6 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libnginx-mod-stream amd64 1.18.0-6ubuntu14.4 [72.9 kB]
+Get:7 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libnginx-mod-stream-geoip2 amd64 1.18.0-6ubuntu14.4 [10.1 kB]
+Get:8 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 nginx-core amd64 1.18.0-6ubuntu14.4 [484 kB]
+Get:9 http://au.archive.ubuntu.com/ubuntu jammy-updates/main amd64 nginx amd64 1.18.0-6ubuntu14.4 [3872 B]
+Fetched 697 kB in 0s (2443 kB/s)
+Preconfiguring packages ...
+Selecting previously unselected package nginx-common.
+(Reading database ... 206320 files and directories currently installed.)
+Preparing to unpack .../0-nginx-common_1.18.0-6ubuntu14.4_all.deb ...
+Unpacking nginx-common (1.18.0-6ubuntu14.4) ...
+Selecting previously unselected package libnginx-mod-http-geoip2.
+Preparing to unpack .../1-libnginx-mod-http-geoip2_1.18.0-6ubuntu14.4_amd64.deb ...
+Unpacking libnginx-mod-http-geoip2 (1.18.0-6ubuntu14.4) ...
+Selecting previously unselected package libnginx-mod-http-image-filter.
+Preparing to unpack .../2-libnginx-mod-http-image-filter_1.18.0-6ubuntu14.4_amd64.deb ...
+Unpacking libnginx-mod-http-image-filter (1.18.0-6ubuntu14.4) ...
+Selecting previously unselected package libnginx-mod-http-xslt-filter.
+Preparing to unpack .../3-libnginx-mod-http-xslt-filter_1.18.0-6ubuntu14.4_amd64.deb ...
+Unpacking libnginx-mod-http-xslt-filter (1.18.0-6ubuntu14.4) ...
+Selecting previously unselected package libnginx-mod-mail.
+Preparing to unpack .../4-libnginx-mod-mail_1.18.0-6ubuntu14.4_amd64.deb ...
+Unpacking libnginx-mod-mail (1.18.0-6ubuntu14.4) ...
+Selecting previously unselected package libnginx-mod-stream.
+Preparing to unpack .../5-libnginx-mod-stream_1.18.0-6ubuntu14.4_amd64.deb ...
+Unpacking libnginx-mod-stream (1.18.0-6ubuntu14.4) ...
+Selecting previously unselected package libnginx-mod-stream-geoip2.
+Preparing to unpack .../6-libnginx-mod-stream-geoip2_1.18.0-6ubuntu14.4_amd64.deb ...
+Unpacking libnginx-mod-stream-geoip2 (1.18.0-6ubuntu14.4) ...
+Selecting previously unselected package nginx-core.
+Preparing to unpack .../7-nginx-core_1.18.0-6ubuntu14.4_amd64.deb ...
+Unpacking nginx-core (1.18.0-6ubuntu14.4) ...
+Selecting previously unselected package nginx.
+Preparing to unpack .../8-nginx_1.18.0-6ubuntu14.4_amd64.deb ...
+Unpacking nginx (1.18.0-6ubuntu14.4) ...
+Setting up nginx-common (1.18.0-6ubuntu14.4) ...
+Created symlink /etc/systemd/system/multi-user.target.wants/nginx.service → /lib/systemd/system/nginx.service.
+Setting up libnginx-mod-http-xslt-filter (1.18.0-6ubuntu14.4) ...
+Setting up libnginx-mod-http-geoip2 (1.18.0-6ubuntu14.4) ...
+Setting up libnginx-mod-mail (1.18.0-6ubuntu14.4) ...
+Setting up libnginx-mod-http-image-filter (1.18.0-6ubuntu14.4) ...
+Setting up libnginx-mod-stream (1.18.0-6ubuntu14.4) ...
+Setting up libnginx-mod-stream-geoip2 (1.18.0-6ubuntu14.4) ...
+Setting up nginx-core (1.18.0-6ubuntu14.4) ...
+ * Upgrading binary nginx                                                                                                                                                                                         [ OK ]
+Setting up nginx (1.18.0-6ubuntu14.4) ...
+Processing triggers for man-db (2.10.2-1) ...
+Processing triggers for ufw (0.36.1-4ubuntu0.1) ...
+Scanning processes...
+Scanning candidates...
+Scanning linux images...
+
+Running kernel seems to be up-to-date.
+
+Restarting services...
+Service restarts being deferred:
+ systemctl restart ModemManager.service
+ systemctl restart NetworkManager.service
+ systemctl restart accounts-daemon.service
+ systemctl restart acpid.service
+ systemctl restart anacron.service
+ systemctl restart avahi-daemon.service
+ systemctl restart bluetooth.service
+ systemctl restart colord.service
+ systemctl restart cron.service
+ systemctl restart cups-browsed.service
+ systemctl restart cups.service
+ /etc/needrestart/restart.d/dbus.service
+ systemctl restart fwupd.service
+ systemctl restart gdm.service
+ systemctl restart gdm3.service
+ systemctl restart irqbalance.service
+ systemctl restart kerneloops.service
+ systemctl restart multipathd.service
+ systemctl restart networkd-dispatcher.service
+ systemctl restart packagekit.service
+ systemctl restart polkit.service
+ systemctl restart postgresql@14-main.service
+ systemctl restart power-profiles-daemon.service
+ systemctl restart redis-server.service
+ systemctl restart rsyslog.service
+ systemctl restart rtkit-daemon.service
+ systemctl restart snapd.service
+ systemctl restart ssh.service
+ systemctl restart switcheroo-control.service
+ systemctl restart systemd-journald.service
+ systemctl restart systemd-logind.service
+ /etc/needrestart/restart.d/systemd-manager
+ systemctl restart systemd-networkd.service
+ systemctl restart systemd-oomd.service
+ systemctl restart systemd-resolved.service
+ systemctl restart systemd-timesyncd.service
+ systemctl restart systemd-udevd.service
+ systemctl restart udisks2.service
+ systemctl restart unattended-upgrades.service
+ systemctl restart upower.service
+ systemctl restart user@1000.service
+ systemctl restart user@126.service
+ systemctl restart wpa_supplicant.service
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+Nginx installed successfully.
+#23. Create and configure the Nginx site file.
+Nginx site configuration created successfully.
+#24. Delete the Nginx default site and create a symlink to the new active file.
+
+Command executed successfully: sudo rm /etc/nginx/sites-enabled/default
+
+Command executed successfully: sudo ln -s /etc/nginx/sites-available/netbox /etc/nginx/sites-enabled/netbox
+Default Nginx site deleted and symlink created successfully.
+#25. Restart the Nginx service.
+
+Command executed successfully: sudo systemctl restart nginx
+Nginx service restarted successfully.
+Script execution time: 443.284708738327 seconds
+######################################################################################################################
+
+######################################################################################################################
