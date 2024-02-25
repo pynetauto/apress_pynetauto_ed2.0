@@ -14,11 +14,11 @@ if password:
 tn.write(b"conf t\n")
 # Adds 5 vlans to the list with for loop
 vlans = [101, 202, 303, 404, 505] # vlans to add in  a list
-for i in vlans: 
-          command_1 = "vlan " + str(i) + "\n" 
-          tn.write(command_1.encode('ascii')) 
-          command_2 = "name PYTHON_VLAN_" + str(i) + "\n" 
-          tn.write(command_2.encode('ascii')) 
+for i in vlans:
+          command_1 = "vlan " + str(i) + "\n"
+          tn.write(command_1.encode('ascii'))
+          command_2 = "name PYTHON_VLAN_" + str(i) + "\n"
+          tn.write(command_2.encode('ascii'))
 
 tn.write(b"end\n")
 tn.write(b"exit\n")
