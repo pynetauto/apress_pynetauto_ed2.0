@@ -21,7 +21,7 @@ with open("ip_addresses.txt") as file:
             tn.read_until(b"Password: ")
             tn.write(password.encode('ascii') + b"\n")
 
-        tn.write(b"wrie memory\n") # save config
+        tn.write(b"write memory\n") # save config
         tn.write(b"exit\n")
 
         print(tn.read_all().decode('ascii'))
