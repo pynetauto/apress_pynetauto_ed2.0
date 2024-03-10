@@ -26,12 +26,12 @@ for x in device_list:
     newiosmd5 = str(x[5].lower()).strip()
     print(newiosmd5)
     newiosmd5hash = hashlib.md5()
-    file = open(f'/home/jdoe/ch20/new_ios/{newios}', 'rb')
+    file = open(f'/home/jdoe/ch9_tools_dev1/new_ios/{newios}', 'rb')
     content = file.read()
     newiosmd5hash.update(content)
     newiosmd5server = newiosmd5hash.hexdigest()
     print(newiosmd5server.strip())
-    newiossize = round(os.path.getsize(f'/home/jdoe/ch20/new_ios/{newios}')/1000000, 2)
+    newiossize = round(os.path.getsize(f'/home/jdoe/ch9_tools_dev1/new_ios/{newios}')/1000000, 2)
     print(newiossize, "MB")
 
     if newiosmd5server == newiosmd5:
