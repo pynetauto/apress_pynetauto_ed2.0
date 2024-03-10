@@ -1,7 +1,7 @@
 import time
 from netmiko import ConnectHandler, SCPConn
 
-source_newios = "/home/jdoe/ch21/new_ios/c8000v-Dev-File-Only.bin"
+source_newios = "/home/jdoe/ch10_tools_dev2/new_ios/c8000v-Dev-File-Only.bin"
 destination_newios = "c8000v-Dev-File-Only.bin"
 
 device1 = {
