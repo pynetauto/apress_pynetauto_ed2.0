@@ -80,7 +80,7 @@ change_media_ownership_command = "sudo chown --recursive netbox /opt/netbox/netb
 run_command(create_netbox_user_command)
 run_command(change_media_ownership_command)
 ##########
-print("#9. Change directory, copy example configuration file, and then modify it.)
+print("#9. Change directory, copy example configuration file, and then modify it.")
 os.chdir("/opt/netbox/netbox/netbox/")
 copy_config_file_command = "sudo cp configuration_example.py configuration.py"
 run_command(copy_config_file_command)
